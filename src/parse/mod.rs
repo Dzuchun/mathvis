@@ -20,7 +20,7 @@ pub enum ParenType {
     Brace,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Operator {
     Plus,
     Minus,

@@ -31,6 +31,8 @@ where
 #[cfg(test)]
 mod negation_tests {
 
+    use num::complex::Complex64;
+
     use crate::{
         aet::{arithmetic::Negation, Args, Calculable, Constant, Variable},
         eval::EvaluationError,
@@ -58,7 +60,7 @@ mod negation_tests {
     #[test]
     fn should_demand_param() {
         // arrange
-        let calc = Negation::new(Variable::<i32>::new("x").into());
+        let calc = Negation::new(Variable::<Complex64>::new("x").into());
         let args = Args::new();
 
         // act
@@ -71,29 +73,32 @@ mod negation_tests {
     #[test]
     fn should_have_same_type() {
         // arrange
-        let calc = Negation::new(Variable::<i32>::new("x").into());
+        let calc = Negation::new(Variable::<Complex64>::new("x").into());
         let mut args = Args::new();
-        args.insert("x", 1u8);
+        args.insert_unifunction("x", Complex64::sinh);
 
         // act
         let res = calc.evaluate(&args);
 
         // assert
-        assert_eq!(res, Err(EvaluationError::WrongType("x".to_owned(), "i32")));
+        assert_eq!(
+            res,
+            Err(EvaluationError::WrongType("x".to_owned(), "value"))
+        );
     }
 
     #[test]
     fn should_succeed() {
         // arrange
-        let calc = Negation::new(Variable::<i32>::new("x").into());
+        let calc = Negation::new(Variable::<Complex64>::new("x").into());
         let mut args = Args::new();
-        args.insert("x", 1i32);
+        args.insert_value("x", 1f64.into());
 
         // act
         let res = calc.evaluate(&args);
 
         // assert
-        assert_eq!(res, Ok(-1i32));
+        assert_eq!(res, Ok(Complex64::new(-1.0, 0.0)));
     }
 }
 
@@ -125,6 +130,8 @@ where
 #[cfg(test)]
 mod addition_tests {
 
+    use num::complex::Complex64;
+
     use crate::{
         aet::{Args, Calculable, Variable},
         eval::EvaluationError,
@@ -136,40 +143,40 @@ mod addition_tests {
     fn should_demand_both() {
         // arrange
         let calc = Addition::new(
-            Variable::<i32>::new("x").into(),
-            Variable::<i32>::new("y").into(),
+            Variable::<Complex64>::new("x").into(),
+            Variable::<Complex64>::new("y").into(),
         );
         let mut args = Args::new();
 
         // act + assert
-        args.insert("x", 1i32);
+        args.insert_value("x", 1f64.into());
         assert_eq!(
             calc.evaluate(&args),
             Err(EvaluationError::MissingEntry("y".to_owned()))
         );
 
         args.unregister("x");
-        args.insert("y", 2i32);
+        args.insert_value("y", 2f64.into());
         assert_eq!(
             calc.evaluate(&args),
             Err(EvaluationError::MissingEntry("x".to_owned()))
         );
 
-        args.insert("x", 1i32);
-        assert_eq!(calc.evaluate(&args), Ok(3i32));
+        args.insert_value("x", 1f64.into());
+        assert_eq!(calc.evaluate(&args), Ok(Complex64::new(3.0, 0.0)));
     }
 
     #[test]
     fn should_demand_one() {
         // arrange
         let calc = Addition::new(
-            Variable::<i32>::new("x").into(),
-            Variable::<i32>::new("x").into(),
+            Variable::<Complex64>::new("x").into(),
+            Variable::<Complex64>::new("x").into(),
         );
         let mut args = Args::new();
 
         // act + assert
-        args.insert("y", 2i32);
+        args.insert_value("y", 2f64.into());
         assert_eq!(
             calc.evaluate(&args),
             Err(EvaluationError::MissingEntry("x".to_owned()))
@@ -181,14 +188,14 @@ mod addition_tests {
             Err(EvaluationError::MissingValue("x".to_owned()))
         );
 
-        args.insert("x", 1u8);
+        args.insert_unifunction("x", Complex64::acos);
         assert_eq!(
             calc.evaluate(&args),
-            Err(EvaluationError::WrongType("x".to_owned(), "i32"))
+            Err(EvaluationError::WrongType("x".to_owned(), "value"))
         );
 
-        args.insert("x", 1i32);
-        assert_eq!(calc.evaluate(&args), Ok(2i32));
+        args.insert_value("x", 1f64.into());
+        assert_eq!(calc.evaluate(&args), Ok(Complex64::new(2.0, 0.0)));
     }
 }
 

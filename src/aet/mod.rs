@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use num::complex::Complex64;
+
 use crate::eval::{Args, EvaluationError};
 
 pub mod arithmetic;
@@ -36,7 +38,7 @@ impl<Res1, Res2> Calculable for (Node<Res1>, Node<Res2>) {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Constant<T>(pub T);
 
 impl<Res: Clone> Calculable for Constant<Res> {
@@ -51,7 +53,7 @@ impl<Res: Clone> Calculable for Constant<Res> {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
 pub struct Variable<T>(String, PhantomData<T>);
 
 impl<T> Variable<T> {
@@ -60,6 +62,7 @@ impl<T> Variable<T> {
     }
 }
 
+/* 
 impl<Res: Clone + 'static> Calculable for Variable<Res> {
     type Res = Res;
 
@@ -74,6 +77,23 @@ impl<Res: Clone + 'static> Calculable for Variable<Res> {
         args
     }
 }
+ */
+
+impl Calculable for Variable<Complex64> {
+    type Res = Complex64;
+
+    #[inline(always)]
+    fn evaluate(&self, arguments: &Args) -> Result<Self::Res, EvaluationError> {
+        arguments.get_value(self.0.as_str()).cloned()
+    }
+
+    fn args(&self) -> Args {
+        let mut args = Args::new();
+        args.register(self.0.clone());
+        args
+    }
+}
+
 
 pub trait Operator {
     type In;
@@ -101,9 +121,11 @@ where
 #[cfg(test)]
 mod tests {
 
-    use crate::eval::{EvaluationError, Args};
+    use num::complex::Complex64;
 
-    use super::{Constant, Variable, Calculable};
+    use crate::eval::{Args, EvaluationError};
+
+    use super::{Calculable, Constant, Variable};
 
     #[test]
     fn consts() {
@@ -127,7 +149,7 @@ mod tests {
     #[test]
     fn variable_should_exist() {
         // arrange
-        let calc = Variable::<i32>::new("x");
+        let calc = Variable::<Complex64>::new("x");
         let args = Args::new();
 
         // act
@@ -140,10 +162,10 @@ mod tests {
     #[test]
     fn variables_should_have_same_type() {
         // arrange
-        let calc = Variable::<i32>::new("x");
+        let calc = Variable::<Complex64>::new("x");
         let args = {
             let mut args = Args::new();
-            args.insert("x", 1u8);
+            args.insert_unifunction("x", Complex64::sin);
             args
         };
 
@@ -151,16 +173,17 @@ mod tests {
         let res = calc.evaluate(&args);
 
         // assert
-        assert_eq!(res, Err(EvaluationError::WrongType("x".to_owned(), "i32")));
+        assert_eq!(res, Err(EvaluationError::WrongType("x".to_owned(), "value")));
     }
+    
 
     #[test]
     fn should_succeed() {
         // arrange
-        let calc = Variable::<i32>::new("x");
+        let calc = Variable::<Complex64>::new("x");
         let args = {
             let mut args = Args::new();
-            args.insert("x", 1i32);
+            args.insert_value("x", 1.0f64.into());
             args
         };
 
@@ -168,6 +191,6 @@ mod tests {
         let res = calc.evaluate(&args);
 
         // assert
-        assert_eq!(res, Ok(1i32));
+        assert_eq!(res, Ok(1.0f64.into()));
     }
 }
