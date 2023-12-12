@@ -116,7 +116,13 @@ fn find_bin_operator(tokens: &[Token]) -> Res<(&[Token], Operator, &[Token])> {
             })
             .filter(|i| *i != 0)
             .collect::<Vec<_>>();
-        if let Some(&ind) = inds.get(inds.len() / 2) {
+        if let Some(&ind) = match operator {
+            Operator::Plus => inds.first(),
+            Operator::Minus => inds.last(),
+            Operator::Star => inds.first(),
+            Operator::Slash => inds.last(),
+            Operator::Cap => inds.first(),
+        } {
             return Ok((&[], (&tokens[..ind], operator.clone(), &tokens[ind + 1..])));
         }
     }
