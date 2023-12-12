@@ -3,7 +3,7 @@ The name is `MathVis`. Stands for "Math Vision"
 ## Adding to project
 There's no cargo entry for it yet, but you can (hopefully) still use it by including
 ```toml
-    regex = { git = "https://github.com/Dzuchun/mathvis.git" }
+    mathvis = { git = "https://github.com/Dzuchun/mathvis.git" }
 ```
 into your project's `Cargo.toml` file.
 
