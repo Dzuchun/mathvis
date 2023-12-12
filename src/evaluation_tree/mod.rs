@@ -37,6 +37,18 @@ impl EvaluationTree {
     }
 }
 
+impl Evaluatable for EvaluationTree {
+    type Res = Complex64;
+
+    fn evaluate(&self, arguments: &Args) -> Result<Self::Res, MissingError> {
+        self.0.evaluate(arguments)
+    }
+
+    fn args(&self) -> Args {
+        self.0.args()
+    }
+}
+
 impl<Res1, Res2> Evaluatable for (Node<Res1>, Node<Res2>) {
     type Res = (Res1, Res2);
 

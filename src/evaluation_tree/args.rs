@@ -222,4 +222,29 @@ impl Args {
     pub fn variables_mut(&mut self) -> impl IntoIterator<Item = (&String, &mut Option<Complex64>)> {
         self.variables.iter_mut()
     }
+
+    pub fn functions(&self) -> impl IntoIterator<Item = &String> {
+        self.functions.keys()
+    }
+
+    pub fn functions_mut(
+        &mut self,
+    ) -> impl IntoIterator<Item = (&String, &mut Option<Box<dyn Fn(Complex64) -> Complex64>>)> {
+        self.functions.iter_mut()
+    }
+
+    pub fn functions2(&self) -> impl IntoIterator<Item = &String> {
+        self.functions2.keys()
+    }
+
+    pub fn functions2_mut(
+        &mut self,
+    ) -> impl IntoIterator<
+        Item = (
+            &String,
+            &mut Option<Box<dyn Fn(Complex64, Complex64) -> Complex64>>,
+        ),
+    > {
+        self.functions2.iter_mut()
+    }
 }
