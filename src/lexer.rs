@@ -14,10 +14,10 @@ use nom::{
 type Res<'l, T = Token> = nom::IResult<&'l str, T, Error<&'l str>>;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ParenType {
-    Paren,
-    Bracket,
-    Brace,
+pub enum GroupingType {
+    Parentheses,
+    Brackets,
+    Braces,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -31,34 +31,43 @@ pub enum Operator {
 
 #[derive(Debug, PartialEq)]
 pub enum Token {
-    Open(ParenType),
-    Close(ParenType),
+    GroupOpen(GroupingType),
+    GroupClose(GroupingType),
     Operator(Operator),
     Comma,
     ImaginaryUnit,
     Number(f64),
-    Ident(String),
+    Identifier(String),
+}
+
+#[derive(Debug, PartialEq, derive_more::Display)]
+pub enum TokenType {
+    Grouping,
+    Operator,
+    Comma,
+    Constant,
+    Identifier,
 }
 
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Open(t) => write!(
+            Token::GroupOpen(t) => write!(
                 f,
                 "{}",
                 match t {
-                    ParenType::Paren => '(',
-                    ParenType::Bracket => '[',
-                    ParenType::Brace => '{',
+                    GroupingType::Parentheses => '(',
+                    GroupingType::Brackets => '[',
+                    GroupingType::Braces => '{',
                 }
             ),
-            Token::Close(t) => write!(
+            Token::GroupClose(t) => write!(
                 f,
                 "{}",
                 match t {
-                    ParenType::Paren => ')',
-                    ParenType::Bracket => ']',
-                    ParenType::Brace => '}',
+                    GroupingType::Parentheses => ')',
+                    GroupingType::Brackets => ']',
+                    GroupingType::Braces => '}',
                 }
             ),
             Token::Operator(o) => write!(
@@ -75,45 +84,47 @@ impl Display for Token {
             Token::Comma => write!(f, ","),
             Token::ImaginaryUnit => write!(f, "i"),
             Token::Number(v) => write!(f, "{}", v),
-            Token::Ident(n) => write!(f, "{}", n),
+            Token::Identifier(n) => write!(f, "{}", n),
         }
     }
 }
 
+/*
 impl Token {
     pub fn description(&self) -> &'static str {
         match self {
-            Token::Open(t) => match t {
-                ParenType::Paren => "opening paren",
-                ParenType::Bracket => "opening bracket",
-                ParenType::Brace => "opening brace",
+            Token::GroupOpen(t) => match t {
+                GroupingType::Parentheses => "opening paren",
+                GroupingType::Brackets => "opening bracket",
+                GroupingType::Braces => "opening brace",
             },
-            Token::Close(t) => match t {
-                ParenType::Paren => "closing paren",
-                ParenType::Bracket => "closing bracket",
-                ParenType::Brace => "closing brace",
+            Token::GroupClose(t) => match t {
+                GroupingType::Parentheses => "closing paren",
+                GroupingType::Brackets => "closing bracket",
+                GroupingType::Braces => "closing brace",
             },
             Token::Operator(o) => match o {
-                Operator::Plus => "plus operator",
-                Operator::Minus => "minus operator",
-                Operator::Star => "star operator",
-                Operator::Slash => "slash operator",
-                Operator::Cap => "cap operator",
+                Operator::Plus => "plus",
+                Operator::Minus => "minus",
+                Operator::Star => "star",
+                Operator::Slash => "slash",
+                Operator::Cap => "cap",
             },
             Token::Comma => "comma",
             Token::ImaginaryUnit => "imaginary unit",
             Token::Number(_) => "number literal",
-            Token::Ident(_) => "identifier",
+            Token::Identifier(_) => "identifier",
         }
     }
 }
+*/
 
 fn paren_open(i: &str) -> Res {
     map(one_of("([{"), |c| {
-        Token::Open(match c {
-            '(' => ParenType::Paren,
-            '[' => ParenType::Bracket,
-            '{' => ParenType::Brace,
+        Token::GroupOpen(match c {
+            '(' => GroupingType::Parentheses,
+            '[' => GroupingType::Brackets,
+            '{' => GroupingType::Braces,
             _ => unreachable!(),
         })
     })(i)
@@ -121,10 +132,10 @@ fn paren_open(i: &str) -> Res {
 
 fn paren_close(i: &str) -> Res {
     map(one_of(")]}"), |c| {
-        Token::Close(match c {
-            ')' => ParenType::Paren,
-            ']' => ParenType::Bracket,
-            '}' => ParenType::Brace,
+        Token::GroupClose(match c {
+            ')' => GroupingType::Parentheses,
+            ']' => GroupingType::Brackets,
+            '}' => GroupingType::Braces,
             _ => unreachable!(),
         })
     })(i)
@@ -152,13 +163,13 @@ fn imaginary_unit(i: &str) -> Res {
 }
 
 // source: https://github.com/rust-bakery/nom/blob/main/doc/nom_recipes.md#identifiers
-fn ident(i: &str) -> Res {
+fn identifier(i: &str) -> Res {
     map(
         recognize(pair(
             alt((alpha1, tag("_"))),
             many0_count(alt((alphanumeric1, tag("_")))),
         )),
-        |name: &str| Token::Ident(name.to_owned()),
+        |name: &str| Token::Identifier(name.to_owned()),
     )(i)
 }
 
@@ -170,7 +181,7 @@ fn whitespace(i: &str) -> Res<()> {
     Ok((many0(one_of(" \t\x0c\n"))(i)?.0, ()))
 }
 
-pub fn parse(i: &str) -> Res<Vec<Token>> {
+pub fn lex(i: &str) -> Res<Vec<Token>> {
     fold_many1(
         preceded(
             whitespace,
@@ -181,7 +192,7 @@ pub fn parse(i: &str) -> Res<Vec<Token>> {
                 paren_close,
                 comma,
                 imaginary_unit,
-                ident,
+                identifier,
             )),
         ),
         Vec::new,
@@ -194,9 +205,9 @@ pub fn parse(i: &str) -> Res<Vec<Token>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::parse::ParenType;
+    use crate::lexer::GroupingType;
 
-    use super::parse;
+    use super::lex;
     use super::Token;
 
     #[test]
@@ -205,7 +216,7 @@ mod tests {
         let input = r#"2 + x^2 - (3x^2 - 7y / sin[z])"#;
 
         // act
-        let tokens = parse(input);
+        let tokens = lex(input);
 
         // assert
         assert_eq!(
@@ -214,25 +225,25 @@ mod tests {
                 "",
                 vec![
                     Token::Number(2f64),
-                    Token::Operator(crate::parse::Operator::Plus),
-                    Token::Ident("x".to_owned()),
-                    Token::Operator(crate::parse::Operator::Cap),
+                    Token::Operator(crate::lexer::Operator::Plus),
+                    Token::Identifier("x".to_owned()),
+                    Token::Operator(crate::lexer::Operator::Cap),
                     Token::Number(2f64),
-                    Token::Operator(crate::parse::Operator::Minus),
-                    Token::Open(ParenType::Paren),
+                    Token::Operator(crate::lexer::Operator::Minus),
+                    Token::GroupOpen(GroupingType::Parentheses),
                     Token::Number(3f64),
-                    Token::Ident("x".to_owned()),
-                    Token::Operator(crate::parse::Operator::Cap),
+                    Token::Identifier("x".to_owned()),
+                    Token::Operator(crate::lexer::Operator::Cap),
                     Token::Number(2f64),
-                    Token::Operator(crate::parse::Operator::Minus),
+                    Token::Operator(crate::lexer::Operator::Minus),
                     Token::Number(7f64),
-                    Token::Ident("y".to_owned()),
-                    Token::Operator(crate::parse::Operator::Slash),
-                    Token::Ident("sin".to_owned()),
-                    Token::Open(ParenType::Bracket),
-                    Token::Ident("z".to_owned()),
-                    Token::Close(ParenType::Bracket),
-                    Token::Close(ParenType::Paren),
+                    Token::Identifier("y".to_owned()),
+                    Token::Operator(crate::lexer::Operator::Slash),
+                    Token::Identifier("sin".to_owned()),
+                    Token::GroupOpen(GroupingType::Brackets),
+                    Token::Identifier("z".to_owned()),
+                    Token::GroupClose(GroupingType::Brackets),
+                    Token::GroupClose(GroupingType::Parentheses),
                 ]
             ))
         );

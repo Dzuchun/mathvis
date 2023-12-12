@@ -4,15 +4,19 @@ use nom::{
     branch::alt,
     combinator::{all_consuming, map, map_parser, opt},
     error::{Error as NError, ParseError},
-    sequence::{separated_pair, tuple},
+    sequence::tuple,
     Err, Needed,
 };
 use num::complex::Complex64;
 use thiserror::Error;
 
 use crate::{
-    aet::{self, arithmetic::Negation, functions::NamedFunction, Constant, Node, Variable},
-    parse::{Operator, Token},
+    evaluation_tree::{
+        arithmetic::{Addition, Division, Exponentiation, Multiplication, Negation, Subtraction},
+        functions::NamedFunction,
+        Constant, Node, Variable,
+    },
+    lexer::{Operator, Token, TokenType},
 };
 
 #[derive(Debug, Error)]
@@ -21,8 +25,8 @@ pub enum GenerationError<'l> {
     NomError(NError<&'l [Token]>),
     #[error("No tokens")]
     Empty(Needed),
-    #[error("Bad token: {} expected, but {} found", .0, .1)]
-    BadToken(&'static str, &'static str),
+    #[error("Bad token: {} expected, but {:?} found", .0, .1)]
+    BadToken(TokenType, &'l Token),
     #[error("Paren was left unclosed")]
     UnpairedParen,
     #[error("No expected token found")]
@@ -38,6 +42,7 @@ impl<'l> ParseError<&'l [Token]> for GenerationError<'l> {
         // not really sure what this is about,
         // but it seems that `nom` itself implements this function in a similar fashion,
         // so I guess it's not much of a harm.
+        // TODO actually implement this, lol!
         other
     }
 }
@@ -45,15 +50,17 @@ impl<'l> ParseError<&'l [Token]> for GenerationError<'l> {
 type Res<'l, T = Node<Complex64>> = Result<(&'l [Token], T), Err<GenerationError<'l>>>;
 
 pub fn parse(tokens: &[Token]) -> Result<Node<Complex64>, GenerationError> {
-    node(tokens).map(|(_, n)| n).map_err(|err| match err {
-        Err::Incomplete(needed) => GenerationError::Empty(needed),
-        Err::Error(e) | Err::Failure(e) => e,
-    })
+    all_consuming(node)(tokens)
+        .map(|(_, n)| n)
+        .map_err(|err| match err {
+            Err::Incomplete(needed) => GenerationError::Empty(needed),
+            Err::Error(e) | Err::Failure(e) => e,
+        })
 }
 
 fn node(tokens: &[Token]) -> Res {
     assert_parens(tokens)?;
-    alt((map_parser(paren, raw_node), raw_node))(tokens)
+    alt((all_consuming(map_parser(paren, raw_node)), raw_node))(tokens)
 }
 
 fn raw_node(tokens: &[Token]) -> Res {
@@ -72,11 +79,11 @@ fn bin_operator(tokens: &[Token]) -> Res {
     Ok((
         &[],
         match op {
-            Operator::Plus => aet::arithmetic::Addition::new(node1, node2).into(),
-            Operator::Minus => aet::arithmetic::Subtraction::new(node1, node2).into(),
-            Operator::Star => aet::arithmetic::Multiplication::new(node1, node2).into(),
-            Operator::Slash => aet::arithmetic::Division::new(node1, node2).into(),
-            Operator::Cap => aet::arithmetic::Exponentiation::new(node1, node2).into(),
+            Operator::Plus => Addition::new(node1, node2).into(),
+            Operator::Minus => Subtraction::new(node1, node2).into(),
+            Operator::Star => Multiplication::new(node1, node2).into(),
+            Operator::Slash => Division::new(node1, node2).into(),
+            Operator::Cap => Exponentiation::new(node1, node2).into(),
         },
     ))
 }
@@ -96,8 +103,8 @@ fn find_bin_operator(tokens: &[Token]) -> Res<(&[Token], Operator, &[Token])> {
             .enumerate()
             .filter_map(|(i, token)| {
                 match token {
-                    Token::Open(_) => inner += 1,
-                    Token::Close(_) => inner -= 1,
+                    Token::GroupOpen(_) => inner += 1,
+                    Token::GroupClose(_) => inner -= 1,
                     Token::Operator(op) if op == operator => {
                         if inner == 0 {
                             return Some(i);
@@ -169,7 +176,7 @@ fn function_call(tokens: &[Token]) -> Res {
                 ),
                 map(
                     tuple((identifier, map_parser(paren, comma_separated))),
-                    |(name, (node1, node2))| NamedFunction::new(name, (node1, node2).into()).into(),
+                    |(name, (node1, node2))| NamedFunction::new(name, (node1, node2)).into(),
                 ),
             )),
         )),
@@ -186,7 +193,7 @@ fn function_call(tokens: &[Token]) -> Res {
 fn variable(tokens: &[Token]) -> Res {
     map(tuple((opt(sign), identifier)), |(minus, name)| {
         if let Some(true) = minus {
-            Negation::new(Variable::<Complex64>::new(name).into()).into()
+            Negation::new(Variable::new(name)).into()
         } else {
             Variable::new(name).into()
         }
@@ -198,11 +205,11 @@ fn variable(tokens: &[Token]) -> Res {
 fn assert_parens(tokens: &[Token]) -> Res<()> {
     let mut stack = Vec::new();
     for token in tokens {
-        if let Token::Open(t) = token {
+        if let Token::GroupOpen(t) = token {
             stack.push(t);
         }
 
-        if let Token::Close(t) = token {
+        if let Token::GroupClose(t) = token {
             let Some(&e) = stack.last() else {
                 return Err(Err::Failure(GenerationError::UnpairedParen));
             };
@@ -220,15 +227,15 @@ fn assert_parens(tokens: &[Token]) -> Res<()> {
 }
 
 fn number(tokens: &[Token]) -> Res<f64> {
-    let t = tokens
+    let token = tokens
         .get(0)
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
-    let Token::Number(val) = t else {
+    let Token::Number(val) = token else {
         return Err(Err::Error(GenerationError::BadToken(
-            "number",
-            t.description(),
+            TokenType::Constant,
+            token,
         )));
     };
     Ok((&tokens[1..], *val))
@@ -242,8 +249,8 @@ fn plus(tokens: &[Token]) -> Res<()> {
         ))))?;
     let Token::Operator(Operator::Plus) = t else {
         return Err(Err::Error(GenerationError::BadToken(
-            "plus operator",
-            t.description(),
+            TokenType::Operator,
+            t,
         )));
     };
     Ok((&tokens[1..], ()))
@@ -257,8 +264,8 @@ fn minus(tokens: &[Token]) -> Res<()> {
         ))))?;
     let Token::Operator(Operator::Minus) = t else {
         return Err(Err::Error(GenerationError::BadToken(
-            "minus operator",
-            t.description(),
+            TokenType::Operator,
+            t,
         )));
     };
     Ok((&tokens[1..], ()))
@@ -272,8 +279,8 @@ fn star(tokens: &[Token]) -> Res<()> {
         ))))?;
     let Token::Operator(Operator::Star) = t else {
         return Err(Err::Error(GenerationError::BadToken(
-            "start operator",
-            t.description(),
+            TokenType::Operator,
+            t,
         )));
     };
     Ok((&tokens[1..], ()))
@@ -287,8 +294,8 @@ fn imaginary_unit(tokens: &[Token]) -> Res<()> {
         ))))?;
     let Token::ImaginaryUnit = t else {
         return Err(Err::Error(GenerationError::BadToken(
-            "imaginary unit",
-            t.description(),
+            TokenType::Operator,
+            t,
         )));
     };
     Ok((&tokens[1..], ()))
@@ -300,10 +307,10 @@ fn identifier(tokens: &[Token]) -> Res<String> {
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
-    let Token::Ident(name) = t else {
+    let Token::Identifier(name) = t else {
         return Err(Err::Error(GenerationError::BadToken(
-            "identifier",
-            t.description(),
+            TokenType::Operator,
+            t,
         )));
     };
     Ok((&tokens[1..], name.to_string()))
@@ -320,10 +327,10 @@ fn find_comma(tokens: &[Token]) -> Res<(&[Token], &[Token])> {
     let mut inline = Vec::new();
     for (i, token) in tokens.into_iter().enumerate() {
         match token {
-            Token::Open(t) => {
+            Token::GroupOpen(t) => {
                 inline.push(t);
             }
-            Token::Close(t) => {
+            Token::GroupClose(t) => {
                 if &t
                     != inline
                         .last()
@@ -355,22 +362,22 @@ fn paren(tokens: &[Token]) -> Res<&[Token]> {
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
-    let Token::Open(t) = t else {
+    let Token::GroupOpen(t) = t else {
         return Err(Err::Error(GenerationError::BadToken(
-            "opening paren",
-            t.description(),
+            TokenType::Grouping,
+            t,
         )));
     };
 
     let mut inner = 1;
     for i in 1..tokens.len() {
         let token = &tokens[i];
-        if let Token::Open(e) = token {
+        if let Token::GroupOpen(e) = token {
             if t == e {
                 inner += 1;
             }
         }
-        if let Token::Close(e) = token {
+        if let Token::GroupClose(e) = token {
             if t == e {
                 inner -= 1;
 
@@ -387,28 +394,26 @@ fn paren(tokens: &[Token]) -> Res<&[Token]> {
 #[cfg(test)]
 mod tests {
 
-    use std::collections::HashSet;
-
     use num::complex::Complex64;
     use rand::Rng;
 
     use crate::{
-        aet::{
-            arithmetic::{Addition, Exponentiation, Multiplication, Negation},
+        evaluation_tree::{
+            args::{ArgsErased, MissingError},
+            arithmetic::{Addition, Division, Exponentiation, Multiplication, Negation},
             functions::NamedFunction,
-            Constant, Node, Variable,
+            Constant, Evaluatable, Node, Variable,
         },
-        eval::{Args, EvaluationError},
-        parse::{Operator, Token},
+        lexer::{GroupingType, Operator, Token},
     };
 
     use super::parse;
 
     #[derive(Debug)]
     enum ComparisionError {
-        ArgList(HashSet<String>, HashSet<String>),
-        Evaluation(EvaluationError),
-        Evaluated(Args, Complex64, Complex64),
+        ArgList(ArgsErased, ArgsErased),
+        Evaluation(MissingError),
+        Evaluated(ArgsErased, Complex64, Complex64),
     }
 
     fn rand_complex() -> Complex64 {
@@ -416,26 +421,22 @@ mod tests {
     }
 
     // not a 100%-proof test, but whatever
-    fn compare(node1: Node<Complex64>, node2: Node<Complex64>) -> Result<(), ComparisionError> {
+    fn compare(
+        node1: Node,
+        node2: impl Evaluatable<Res = Complex64>,
+    ) -> Result<(), ComparisionError> {
         let args1 = node1.args();
         let args2 = node2.args();
-        let mut arg_list1 = args1.0.keys().cloned().collect::<HashSet<String>>();
-        let arg_list2 = args2.0.keys().cloned().collect::<HashSet<String>>();
-        if arg_list1 != arg_list2 {
-            return Err(ComparisionError::ArgList(arg_list1, arg_list2));
+        if args1.erased_ref() != args2.erased_ref() {
+            return Err(ComparisionError::ArgList(args1.erased(), args2.erased()));
         }
         let mut args = args1;
-        arg_list1.remove("sin");
-        args.insert_unifunction("sin", Complex64::sin);
-        fn sum_sq((x, y): (Complex64, Complex64)) -> Complex64 {
-            x * x + y * y
-        }
-        // dbg!(&args);
-        arg_list1.remove("sum_sq");
-        args.insert_bifunction("sum_sq", sum_sq);
+        args.assign_function("sin", Complex64::sin);
+        args.assign_function2("sum_sq", |x, y| x * x + y * y);
+
         for _ in 0..100 {
-            for name in &arg_list1 {
-                args.insert_value(name, rand_complex());
+            for (_, val) in args.variables_mut() {
+                *val = Some(rand_complex());
             }
 
             let res1 = node1
@@ -445,7 +446,7 @@ mod tests {
                 .evaluate(&args)
                 .map_err(ComparisionError::Evaluation)?;
             if res1 != res2 {
-                return Err(ComparisionError::Evaluated(args, res1, res2));
+                return Err(ComparisionError::Evaluated(args.erased(), res1, res2));
             }
         }
         Ok(())
@@ -469,22 +470,22 @@ mod tests {
     // following tests reinforce that complex constant recognition works as expected:
     test! {constant1,
     tokens = [Token::Number(1.0f64)],
-    expected = Constant(Complex64::new(1.0, 0.0)).into()}
+    expected = Constant::from(1.0f64)}
     test! {constant2,
     tokens = [Token::ImaginaryUnit],
-    expected = Constant(Complex64::new(0.0, 1.0)).into()}
+    expected = Constant::from(1.0f64).tr()}
     test! {constant3,
     tokens = [
         Token::Number(1.0f64),
         Token::Operator(Operator::Star),
         Token::ImaginaryUnit
-    ], expected = Constant(Complex64::new(0.0, 1.0)).into()}
+    ], expected = Constant::from(1.0f64).tr()}
     test! {constant4,
     tokens = [
         Token::Number(1.0f64),
         Token::Operator(Operator::Plus),
         Token::ImaginaryUnit
-    ], expected = Constant(Complex64::new(1.0, 1.0)).into()}
+    ], expected = Constant(Complex64::new(1.0, 1.0))}
     test! {constant5,
     tokens = [
         Token::Operator(Operator::Minus),
@@ -493,14 +494,14 @@ mod tests {
         Token::Number(1.0),
         Token::Operator(Operator::Star),
         Token::ImaginaryUnit
-    ], expected = Constant(Complex64::new(-1.0, 1.0)).into()}
+    ], expected = Constant(Complex64::new(-1.0, 1.0))}
     test! {constant6,
     tokens = [
         Token::Operator(Operator::Minus),
         Token::Number(1.0f64),
         Token::Operator(Operator::Plus),
         Token::Number(1.0), Token::ImaginaryUnit
-    ], expected = Constant(Complex64::new(-1.0, 1.0)).into()}
+    ], expected = Constant(Complex64::new(-1.0, 1.0))}
     test! {constant7,
     tokens = [
         Token::Operator(Operator::Minus),
@@ -509,89 +510,133 @@ mod tests {
         Token::Number(1.0f64),
         Token::Operator(Operator::Plus),
         Token::Number(1.0)
-    ], expected = Constant(Complex64::new(1.0, -1.0)).into()}
+    ], expected = Constant(Complex64::new(1.0, -1.0))}
     test! {constant8,
     tokens = [
         Token::Operator(Operator::Minus),
         Token::ImaginaryUnit,
         Token::Operator(Operator::Plus),
         Token::Number(1.0)
-    ], expected = Constant(Complex64::new(1.0, -1.0)).into()}
+    ], expected = Constant(Complex64::new(1.0, -1.0))}
     test! {constant9,
     tokens = [
         Token::Operator(Operator::Minus),
         Token::ImaginaryUnit
-    ], expected = Constant(Complex64::new(0.0, -1.0)).into()}
+    ], expected = Constant(Complex64::new(0.0, -1.0))}
 
     // following tests reinforce that variable recognition works as expected:
     test! {variable1,
-    tokens = [Token::Ident("x".to_owned())],
-    expected = Variable::new("x").into()}
+    tokens = [Token::Identifier("x".to_owned())],
+    expected = Variable::new("x")}
     test! {variable2,
-    tokens = [Token::Ident("a_123".to_owned())],
-    expected = Variable::new("a_123").into()}
+    tokens = [Token::Identifier("a_123".to_owned())],
+    expected = Variable::new("a_123")}
 
     // following tests reinforce that function calls work as expected:
     test! {function1,
     tokens = [
-        Token::Ident("sin".to_owned()),
-        Token::Open(crate::parse::ParenType::Paren),
-        Token::Ident("x".to_owned()),
-        Token::Close(crate::parse::ParenType::Paren)
-    ], expected = NamedFunction::<Complex64, Complex64>::new("sin", Variable::<Complex64>::new("x").into()).into()}
+        Token::Identifier("sin".to_owned()),
+        Token::GroupOpen(GroupingType::Parentheses),
+        Token::Identifier("x".to_owned()),
+        Token::GroupClose(GroupingType::Parentheses)
+    ], expected = NamedFunction::new("sin", Variable::new("x"))}
 
     test! {function2,
     tokens = [
-        Token::Ident("sum_sq".to_owned()),
-        Token::Open(crate::parse::ParenType::Paren),
-        Token::Ident("x".to_owned()),
+        Token::Identifier("sum_sq".to_owned()),
+        Token::GroupOpen(GroupingType::Parentheses),
+        Token::Identifier("x".to_owned()),
         Token::Comma,
-        Token::Ident("y".to_owned()),
-        Token::Close(crate::parse::ParenType::Paren)
-    ], expected = NamedFunction::<(Complex64, Complex64), Complex64>::new("sum_sq", Node::from((Variable::<Complex64>::new("x").into(), Variable::<Complex64>::new("y").into()))).into()}
+        Token::Identifier("y".to_owned()),
+        Token::GroupClose(GroupingType::Parentheses)
+    ], expected = NamedFunction::new("sum_sq", (Variable::new("x"), Variable::new("y")))}
 
     test! {function3,
     tokens = [
         Token::Operator(Operator::Minus),
-        Token::Ident("sin".to_owned()),
-        Token::Open(crate::parse::ParenType::Paren),
-        Token::Ident("x".to_owned()),
-        Token::Close(crate::parse::ParenType::Paren)
-    ], expected = Negation::new(NamedFunction::<Complex64, Complex64>::new("sin", Variable::<Complex64>::new("x").into()).into()).into()}
+        Token::Identifier("sin".to_owned()),
+        Token::GroupOpen(GroupingType::Parentheses),
+        Token::Identifier("x".to_owned()),
+        Token::GroupClose(GroupingType::Parentheses)
+    ], expected = Negation::new(NamedFunction::new("sin", Variable::new("x")))}
 
+    // following tests reinforce correct binary operator parsing
+    // x + y * 2
     test! {bin_operator1, tokens = [
-        Token::Ident("x".to_owned()),
+        Token::Identifier("x".to_owned()),
         Token::Operator(Operator::Plus),
-        Token::Ident("y".to_owned()),
+        Token::Identifier("y".to_owned()),
         Token::Operator(Operator::Star),
         Token::Number(2f64.into())
-    ], expected = Addition::new(Variable::<Complex64>::new("x").into(), Multiplication::new(Variable::<Complex64>::new("y").into(), Constant::<Complex64>(2f64.into()).into()).into()).into()}
+    ], expected = Addition::new(Variable::new("x"), Multiplication::new(Variable::new("y"), Constant(2f64.into())))}
 
+    // [-x + 4] * sin{y}^2
     test! {bin_operator2, tokens = [
-        Token::Open(crate::parse::ParenType::Bracket),
+        Token::GroupOpen(GroupingType::Brackets),
         Token::Operator(Operator::Minus),
-        Token::Ident("x".to_owned()),
+        Token::Identifier("x".to_owned()),
         Token::Operator(Operator::Plus),
         Token::Number(4f64.into()),
-        Token::Close(crate::parse::ParenType::Bracket),
+        Token::GroupClose(GroupingType::Brackets),
         Token::Operator(Operator::Star),
-        Token::Ident("sin".to_owned()),
-        Token::Open(crate::parse::ParenType::Brace),
-        Token::Ident("y".to_owned()),
-        Token::Close(crate::parse::ParenType::Brace),
+        Token::Identifier("sin".to_owned()),
+        Token::GroupOpen(GroupingType::Braces),
+        Token::Identifier("y".to_owned()),
+        Token::GroupClose(GroupingType::Braces),
         Token::Operator(Operator::Cap),
         Token::Number(2f64.into())
     ], expected = Multiplication::new(
         Addition::new(
-            Negation::new(Variable::<Complex64>::new("x").into()).into(),
-            Constant(Complex64::new(4.0, 0.0)).into()
-        ).into(),
+            Negation::new(Variable::new("x")),
+            Constant(Complex64::new(4.0, 0.0))
+        ),
         Exponentiation::new(
             NamedFunction::new(
                 "sin",
-                Variable::<Complex64>::new("y").into()
-            ).into(),
-            Constant(Complex64::new(2.0, 0.0)).into()
-        ).into()
-    ).into()}
+                Variable::new("y")
+            ),
+            Constant(Complex64::new(2.0, 0.0))
+        )
+    )}
+
+    // z ^ [z] + sin(1.0 / e ^ {i * phi})
+    test! {bin_operator3, tokens = [
+        Token::Identifier("z".to_owned()),
+        Token::Operator(Operator::Cap),
+        Token::GroupOpen(GroupingType::Brackets),
+        Token::Identifier("z".to_owned()),
+        Token::GroupClose(GroupingType::Brackets),
+        Token::Operator(Operator::Plus),
+        Token::Identifier("sin".to_owned()),
+        Token::GroupOpen(GroupingType::Parentheses),
+        Token::Number(1.0),
+        Token::Operator(Operator::Slash),
+        Token::Identifier("e".to_owned()),
+        Token::Operator(Operator::Cap),
+        Token::GroupOpen(GroupingType::Braces),
+        Token::ImaginaryUnit,
+        Token::Operator(Operator::Star),
+        Token::Identifier("phi".to_owned()),
+        Token::GroupClose(GroupingType::Braces),
+        Token::GroupClose(GroupingType::Parentheses)
+    ], expected = Addition::new(
+        Exponentiation::new(
+            Variable::new("z"),
+            Variable::new("z"),
+        ),
+        NamedFunction::new(
+            "sin",
+            Division::new(
+                Constant(Complex64::new(1.0, 0.0)),
+                Exponentiation::new(
+                    Variable::new("e"),
+                    Multiplication::new(
+                        Constant(Complex64::new(0.0, 1.0)),
+                        Variable::new("phi")
+                    )
+                )
+            )
+        )
+    )
+    }
 }
