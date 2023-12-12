@@ -1,3 +1,11 @@
+//! This module defines function-related objects that can be used as [`Node`].
+//!
+//! These include:
+//! - [`Functional`]: fully-contained function definition along with inner node, requires no additions arguments
+//! - [`NamedFunction`]: functions that has a name and has to be defined by [`Args`] for evaluation
+//!
+//! In presented API, only [`NamedFunction`]s are used for now. Although, I might add lots of default functions that will automatically resolve to their [`Functional`] counterparts during parsing.
+
 use num::complex::Complex64;
 
 use super::{
@@ -5,6 +13,7 @@ use super::{
     Evaluatable, Node, NodeRef, Operator,
 };
 
+/// A defined function node, requires no additional definition.
 pub struct Functional<Func, In>(Func, Node<In>);
 
 impl<Func, In> Operator for Functional<Func, In>
@@ -28,6 +37,7 @@ impl<Func, In> Functional<Func, In> {
     }
 }
 
+/// Named function node, requires definition through [`Args`]
 pub struct NamedFunction<In>(String, Node<In>);
 
 impl<In> NamedFunction<In> {

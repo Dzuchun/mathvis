@@ -1,6 +1,6 @@
 use num::{complex::Complex64, traits::Pow};
 
-use super::{ Node, NodeRef, Operator};
+use super::{Node, NodeRef, Operator};
 
 type Complex64x2 = (Complex64, Complex64);
 
@@ -15,7 +15,6 @@ impl Negation {
 impl Operator for Negation {
     type Input = Complex64;
 
-    #[inline(always)]
     fn operate(&self, input: Self::Input) -> Complex64 {
         -input
     }
@@ -100,7 +99,6 @@ impl Addition {
 impl Operator for Addition {
     type Input = Complex64x2;
 
-    #[inline(always)]
     fn operate(&self, input: Self::Input) -> Complex64 {
         input.0 + input.1
     }
@@ -193,7 +191,6 @@ impl Subtraction {
 impl Operator for Subtraction {
     type Input = Complex64x2;
 
-    #[inline(always)]
     fn operate(&self, input: Self::Input) -> Complex64 {
         input.0 - input.1
     }
@@ -214,7 +211,6 @@ impl Multiplication {
 impl Operator for Multiplication {
     type Input = Complex64x2;
 
-    #[inline(always)]
     fn operate(&self, input: Self::Input) -> Complex64 {
         input.0 * input.1
     }
@@ -235,7 +231,6 @@ impl Division {
 impl Operator for Division {
     type Input = Complex64x2;
 
-    #[inline(always)]
     fn operate(&self, input: Self::Input) -> Complex64 {
         input.0 / input.1
     }
@@ -256,7 +251,6 @@ impl Exponentiation {
 impl Operator for Exponentiation {
     type Input = Complex64x2;
 
-    #[inline(always)]
     fn operate(&self, input: Self::Input) -> Complex64 {
         input.0.pow(input.1)
     }

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+//! This module defines lexer and structs relevant to it.
 
 use nom::{
     branch::alt,
@@ -13,13 +13,18 @@ use nom::{
 
 type Res<'l, T = Token> = nom::IResult<&'l str, T, Error<&'l str>>;
 
+/// Represents type of grouping.
 #[derive(Debug, PartialEq, Clone)]
 pub enum GroupingType {
+    /// ()
     Parentheses,
+    /// []
     Brackets,
+    /// {}
     Braces,
 }
 
+/// Represents operators (not necessary corresponding to actual [`crate::evaluation_tree::Operator`]s).
 #[derive(Debug, PartialEq, Clone)]
 pub enum Operator {
     Plus,
@@ -29,6 +34,7 @@ pub enum Operator {
     Cap,
 }
 
+/// Represents a single token.
 #[derive(Debug, PartialEq)]
 pub enum Token {
     GroupOpen(GroupingType),
@@ -40,6 +46,7 @@ pub enum Token {
     Identifier(String),
 }
 
+/// Represents token type (used for debug)
 #[derive(Debug, PartialEq, derive_more::Display)]
 pub enum TokenType {
     Grouping,
@@ -48,76 +55,6 @@ pub enum TokenType {
     Constant,
     Identifier,
 }
-
-impl Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Token::GroupOpen(t) => write!(
-                f,
-                "{}",
-                match t {
-                    GroupingType::Parentheses => '(',
-                    GroupingType::Brackets => '[',
-                    GroupingType::Braces => '{',
-                }
-            ),
-            Token::GroupClose(t) => write!(
-                f,
-                "{}",
-                match t {
-                    GroupingType::Parentheses => ')',
-                    GroupingType::Brackets => ']',
-                    GroupingType::Braces => '}',
-                }
-            ),
-            Token::Operator(o) => write!(
-                f,
-                "{}",
-                match o {
-                    Operator::Plus => '+',
-                    Operator::Minus => '-',
-                    Operator::Star => '*',
-                    Operator::Slash => '/',
-                    Operator::Cap => '^',
-                }
-            ),
-            Token::Comma => write!(f, ","),
-            Token::ImaginaryUnit => write!(f, "i"),
-            Token::Number(v) => write!(f, "{}", v),
-            Token::Identifier(n) => write!(f, "{}", n),
-        }
-    }
-}
-
-/*
-impl Token {
-    pub fn description(&self) -> &'static str {
-        match self {
-            Token::GroupOpen(t) => match t {
-                GroupingType::Parentheses => "opening paren",
-                GroupingType::Brackets => "opening bracket",
-                GroupingType::Braces => "opening brace",
-            },
-            Token::GroupClose(t) => match t {
-                GroupingType::Parentheses => "closing paren",
-                GroupingType::Brackets => "closing bracket",
-                GroupingType::Braces => "closing brace",
-            },
-            Token::Operator(o) => match o {
-                Operator::Plus => "plus",
-                Operator::Minus => "minus",
-                Operator::Star => "star",
-                Operator::Slash => "slash",
-                Operator::Cap => "cap",
-            },
-            Token::Comma => "comma",
-            Token::ImaginaryUnit => "imaginary unit",
-            Token::Number(_) => "number literal",
-            Token::Identifier(_) => "identifier",
-        }
-    }
-}
-*/
 
 fn paren_open(i: &str) -> Res {
     map(one_of("([{"), |c| {
@@ -181,6 +118,7 @@ fn whitespace(i: &str) -> Res<()> {
     Ok((many0(one_of(" \t\x0c\n"))(i)?.0, ()))
 }
 
+/// lexes the input
 pub fn lex(i: &str) -> Res<Vec<Token>> {
     fold_many1(
         preceded(

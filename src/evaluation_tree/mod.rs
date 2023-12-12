@@ -1,3 +1,11 @@
+//! This module defines [`Evaluatable`] trait as well as types implementing it that are intended to be used.
+//!
+//! [`EvaluationTree`] is a go-to type to use during your evaluations.
+//! Strictly-speaking, it can be anything, and might even not contain actual [`Node`]s (For now it does contains a single root node though).
+//!
+//! [`EvaluationTree`] can be created by parsing with [`EvaluationTree::from_tokens`] function.
+//! If you need some custom structure, [`EvaluationTree`] can be ignored and bare [`Node`]s used instead, as they both implement [`Evaluatable`] anyway.
+
 use num::{complex::Complex64, Complex};
 
 use crate::{
@@ -8,18 +16,24 @@ use crate::{
 use self::args::{Args, MissingError};
 
 pub mod args;
-pub mod arithmetic;
+pub(crate) mod arithmetic;
 pub mod functions;
 
+/// A trait, defining common interface for everything that can be evaluated.
 pub trait Evaluatable {
+    /// Type of the evaluation result.
     type Res;
 
+    /// Attempts to evaluate this object, possibly failing with [`MissingError`] to indicate missing argument.
     fn evaluate(&self, arguments: &Args) -> Result<Self::Res, MissingError>;
 
+    /// Retrieves arguments this object requires to be evaluated.
     fn args(&self) -> Args;
 }
 
+/// Commonly used type through a crate. Represents "tree node" or th.
 pub type Node<T = Complex64> = Box<dyn Evaluatable<Res = T>>;
+/// Commonly used type through a crate. Represents "tre node reference" or th
 pub type NodeRef<'l, T = Complex64> = &'l dyn Evaluatable<Res = T>;
 type Res<T = Complex64> = Result<T, MissingError>;
 
@@ -29,11 +43,13 @@ impl<Ev: Evaluatable + 'static> From<Ev> for Node<Ev::Res> {
     }
 }
 
+/// Represents parsed expression, ready to be evaluated.
 pub struct EvaluationTree(Node);
 
 impl EvaluationTree {
+    /// Attempts to parse a tree from token slice. May fail with [`GenerationError`] to indicate incorrect syntax.
     pub fn from_tokens(tokens: &[Token]) -> Result<Self, GenerationError> {
-        Ok(Self(parse(&tokens)?))
+        Ok(Self(parse(tokens)?))
     }
 }
 
@@ -52,7 +68,6 @@ impl Evaluatable for EvaluationTree {
 impl<Res1, Res2> Evaluatable for (Node<Res1>, Node<Res2>) {
     type Res = (Res1, Res2);
 
-    #[inline(always)]
     fn evaluate(&self, arguments: &Args) -> Res<Self::Res> {
         Ok((self.0.evaluate(arguments)?, self.1.evaluate(arguments)?))
     }
@@ -67,7 +82,6 @@ impl<Res1, Res2> Evaluatable for (Node<Res1>, Node<Res2>) {
 impl<N1: Evaluatable, N2: Evaluatable> Evaluatable for (N1, N2) {
     type Res = (N1::Res, N2::Res);
 
-    #[inline(always)]
     fn evaluate(&self, arguments: &Args) -> Res<Self::Res> {
         Ok((self.0.evaluate(arguments)?, self.1.evaluate(arguments)?))
     }
@@ -79,11 +93,13 @@ impl<N1: Evaluatable, N2: Evaluatable> Evaluatable for (N1, N2) {
     }
 }
 
+/// Basic type implementing [`Evaluatable`]. Requires no variables to evaluate and always returns the same value.
 #[derive(PartialEq)]
 pub struct Constant(pub Complex64);
 
 impl Constant {
-    pub fn tr(self: Self) -> Self {
+    /// "transposes" the value, swapping it's real and imaginary part.
+    pub fn tr(self) -> Self {
         let Self(Complex::<f64> { re, im }) = self;
         Self(Complex64::new(im, re))
     }
@@ -104,7 +120,6 @@ impl From<f64> for Constant {
 impl Evaluatable for Constant {
     type Res = Complex64;
 
-    #[inline(always)]
     fn evaluate(&self, _: &Args) -> Res {
         Ok(self.0)
     }
@@ -114,6 +129,7 @@ impl Evaluatable for Constant {
     }
 }
 
+/// Basic type implementing [`Evaluatable`], having a name. Requires a single variable argument to be evaluated.
 #[derive(PartialEq)]
 pub struct Variable(String);
 
@@ -126,7 +142,6 @@ impl Variable {
 impl Evaluatable for Variable {
     type Res = Complex64;
 
-    #[inline(always)]
     fn evaluate(&self, arguments: &Args) -> Res {
         arguments.get_variable(&self.0).copied()
     }
@@ -138,9 +153,14 @@ impl Evaluatable for Variable {
     }
 }
 
+/// A trait defining common evaluatable behavior.
+/// Simplifies [`Evaluatable`] implementation for types that contain inner node and require no additional parameters.
 pub trait Operator {
+    /// Type of value inputted *into operator*
     type Input;
+    /// Operation over input value
     fn operate(&self, input: Self::Input) -> Complex64;
+    /// Retrieves reference to operator's inner node.
     fn inner(&self) -> NodeRef<Self::Input>;
 }
 
@@ -150,7 +170,6 @@ where
 {
     type Res = Complex64;
 
-    #[inline(always)]
     fn evaluate(&self, arguments: &Args) -> Res {
         Ok(self.operate(self.inner().evaluate(arguments)?))
     }

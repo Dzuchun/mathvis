@@ -1,3 +1,5 @@
+//! This module defines parser and relevant structs.
+
 use std::num::NonZeroUsize;
 
 use nom::{
@@ -19,16 +21,22 @@ use crate::{
     lexer::{Operator, Token, TokenType},
 };
 
+/// Represents error occurred during tree generation.
 #[derive(Debug, Error)]
 pub enum GenerationError<'l> {
+    /// Error emitted by `nom`
     #[error("{0:?}")]
     NomError(NError<&'l [Token]>),
+    /// There are no more tokens, but some were expected
     #[error("No tokens")]
     Empty(Needed),
+    /// Unexpected token type encountered
     #[error("Bad token: {} expected, but {:?} found", .0, .1)]
     BadToken(TokenType, &'l Token),
+    /// There's an unpaired grouping
     #[error("Paren was left unclosed")]
-    UnpairedParen,
+    UnpairedGrouping,
+    /// Expected token was not found
     #[error("No expected token found")]
     NoToken,
 }
@@ -49,6 +57,7 @@ impl<'l> ParseError<&'l [Token]> for GenerationError<'l> {
 
 type Res<'l, T = Node<Complex64>> = Result<(&'l [Token], T), Err<GenerationError<'l>>>;
 
+/// parses tokens into a node.
 pub fn parse(tokens: &[Token]) -> Result<Node<Complex64>, GenerationError> {
     all_consuming(node)(tokens)
         .map(|(_, n)| n)
@@ -99,7 +108,7 @@ fn find_bin_operator(tokens: &[Token]) -> Res<(&[Token], Operator, &[Token])> {
     for operator in &PREDESCENCE {
         let mut inner = 0;
         let inds = tokens
-            .into_iter()
+            .iter()
             .enumerate()
             .filter_map(|(i, token)| {
                 match token {
@@ -117,11 +126,8 @@ fn find_bin_operator(tokens: &[Token]) -> Res<(&[Token], Operator, &[Token])> {
             .filter(|i| *i != 0)
             .collect::<Vec<_>>();
         if let Some(&ind) = match operator {
-            Operator::Plus => inds.first(),
-            Operator::Minus => inds.last(),
-            Operator::Star => inds.first(),
-            Operator::Slash => inds.last(),
-            Operator::Cap => inds.first(),
+            Operator::Plus | Operator::Star | Operator::Cap => inds.first(),
+            Operator::Minus | Operator::Slash => inds.last(),
         } {
             return Ok((&[], (&tokens[..ind], operator.clone(), &tokens[ind + 1..])));
         }
@@ -165,9 +171,9 @@ fn real_part(tokens: &[Token]) -> Res<f64> {
 
 fn imaginary_part(tokens: &[Token]) -> Res<f64> {
     alt((
-        map(tuple((number, opt(star), imaginary_unit)), |(n, _, _)| n),
-        map(tuple((imaginary_unit, star, number)), |(_, _, n)| n),
-        map(imaginary_unit, |_| 1.0f64),
+        map(tuple((number, opt(star), imaginary_unit)), |(n, _, ())| n),
+        map(tuple((imaginary_unit, star, number)), |((), (), n)| n),
+        map(imaginary_unit, |()| 1.0f64),
     ))(tokens)
 }
 
@@ -217,18 +223,18 @@ fn assert_parens(tokens: &[Token]) -> Res<()> {
 
         if let Token::GroupClose(t) = token {
             let Some(&e) = stack.last() else {
-                return Err(Err::Failure(GenerationError::UnpairedParen));
+                return Err(Err::Failure(GenerationError::UnpairedGrouping));
             };
             if e != t {
-                return Err(Err::Failure(GenerationError::UnpairedParen));
+                return Err(Err::Failure(GenerationError::UnpairedGrouping));
             }
             stack.pop();
         }
     }
-    if !stack.is_empty() {
-        Err(Err::Failure(GenerationError::UnpairedParen))
-    } else {
+    if stack.is_empty() {
         Ok((&[], ()))
+    } else {
+        Err(Err::Failure(GenerationError::UnpairedGrouping))
     }
 }
 
@@ -331,7 +337,7 @@ fn comma_separated(tokens: &[Token]) -> Res<(Node<Complex64>, Node<Complex64>)> 
 
 fn find_comma(tokens: &[Token]) -> Res<(&[Token], &[Token])> {
     let mut inline = Vec::new();
-    for (i, token) in tokens.into_iter().enumerate() {
+    for (i, token) in tokens.iter().enumerate() {
         match token {
             Token::GroupOpen(t) => {
                 inline.push(t);
@@ -340,9 +346,9 @@ fn find_comma(tokens: &[Token]) -> Res<(&[Token], &[Token])> {
                 if &t
                     != inline
                         .last()
-                        .ok_or(Err::Failure(GenerationError::UnpairedParen))?
+                        .ok_or(Err::Failure(GenerationError::UnpairedGrouping))?
                 {
-                    return Err(Err::Failure(GenerationError::UnpairedParen));
+                    return Err(Err::Failure(GenerationError::UnpairedGrouping));
                 }
 
                 inline.pop();
@@ -359,7 +365,7 @@ fn find_comma(tokens: &[Token]) -> Res<(&[Token], &[Token])> {
 }
 
 fn sign(tokens: &[Token]) -> Res<bool> {
-    alt((map(plus, |_| false), map(minus, |_| true)))(tokens)
+    alt((map(plus, |()| false), map(minus, |()| true)))(tokens)
 }
 
 fn paren(tokens: &[Token]) -> Res<&[Token]> {
@@ -394,7 +400,7 @@ fn paren(tokens: &[Token]) -> Res<&[Token]> {
         }
     }
 
-    Err(Err::Failure(GenerationError::UnpairedParen))
+    Err(Err::Failure(GenerationError::UnpairedGrouping))
 }
 
 #[cfg(test)]
