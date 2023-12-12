@@ -1,0 +1,21 @@
+var srcIndex = JSON.parse('{\
+"convert_case":["",[],["case.rs","lib.rs","words.rs"]],\
+"derive_more":["",[],["add_assign_like.rs","add_helpers.rs","add_like.rs","as_mut.rs","as_ref.rs","constructor.rs","deref.rs","deref_mut.rs","display.rs","error.rs","from.rs","from_str.rs","index.rs","index_mut.rs","into.rs","into_iterator.rs","is_variant.rs","lib.rs","mul_assign_like.rs","mul_helpers.rs","mul_like.rs","not_like.rs","parsing.rs","sum_like.rs","try_into.rs","unwrap.rs","utils.rs"]],\
+"mathvis":["",[["evaluation_tree",[],["args.rs","arithmetic.rs","functions.rs","mod.rs"]]],["lexer.rs","lib.rs","parser.rs"]],\
+"memchr":["",[["arch",[["all",[["packedpair",[],["default_rank.rs","mod.rs"]]],["memchr.rs","mod.rs","rabinkarp.rs","shiftor.rs","twoway.rs"]],["generic",[],["memchr.rs","mod.rs","packedpair.rs"]],["x86_64",[["avx2",[],["memchr.rs","mod.rs","packedpair.rs"]],["sse2",[],["memchr.rs","mod.rs","packedpair.rs"]]],["memchr.rs","mod.rs"]]],["mod.rs"]],["memmem",[],["mod.rs","searcher.rs"]]],["cow.rs","ext.rs","lib.rs","macros.rs","memchr.rs","vector.rs"]],\
+"minimal_lexical":["",[],["bigint.rs","extended_float.rs","lemire.rs","lib.rs","mask.rs","num.rs","number.rs","parse.rs","rounding.rs","slow.rs","stackvec.rs","table.rs","table_lemire.rs","table_small.rs"]],\
+"nom":["",[["bits",[],["complete.rs","mod.rs","streaming.rs"]],["branch",[],["mod.rs"]],["bytes",[],["complete.rs","mod.rs","streaming.rs"]],["character",[],["complete.rs","mod.rs","streaming.rs"]],["combinator",[],["mod.rs"]],["multi",[],["mod.rs"]],["number",[],["complete.rs","mod.rs","streaming.rs"]],["sequence",[],["mod.rs"]]],["error.rs","internal.rs","lib.rs","macros.rs","str.rs","traits.rs"]],\
+"num":["",[],["lib.rs"]],\
+"num_bigint":["",[["bigint",[],["addition.rs","bits.rs","convert.rs","division.rs","multiplication.rs","power.rs","shift.rs","subtraction.rs"]],["biguint",[],["addition.rs","bits.rs","convert.rs","division.rs","iter.rs","monty.rs","multiplication.rs","power.rs","shift.rs","subtraction.rs"]]],["bigint.rs","biguint.rs","lib.rs","macros.rs"]],\
+"num_complex":["",[],["cast.rs","complex_float.rs","lib.rs","pow.rs"]],\
+"num_integer":["",[],["average.rs","lib.rs","roots.rs"]],\
+"num_iter":["",[],["lib.rs"]],\
+"num_rational":["",[],["lib.rs","pow.rs"]],\
+"num_traits":["",[["ops",[],["bytes.rs","checked.rs","euclid.rs","inv.rs","mod.rs","mul_add.rs","overflowing.rs","saturating.rs","wrapping.rs"]]],["bounds.rs","cast.rs","float.rs","identities.rs","int.rs","lib.rs","macros.rs","pow.rs","real.rs","sign.rs"]],\
+"proc_macro2":["",[],["detection.rs","extra.rs","fallback.rs","lib.rs","marker.rs","parse.rs","rcvec.rs","wrapper.rs"]],\
+"quote":["",[],["ext.rs","format.rs","ident_fragment.rs","lib.rs","runtime.rs","spanned.rs","to_tokens.rs"]],\
+"thiserror":["",[],["aserror.rs","display.rs","lib.rs"]],\
+"thiserror_impl":["",[],["ast.rs","attr.rs","expand.rs","fmt.rs","generics.rs","lib.rs","prop.rs","span.rs","valid.rs"]],\
+"unicode_ident":["",[],["lib.rs","tables.rs"]]\
+}');
+createSrcSidebar();

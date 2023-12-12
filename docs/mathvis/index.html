@@ -1,0 +1,151 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The name is `MathVis`. Stands for “Math Vision”"><title>mathvis - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="mathvis" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../mathvis/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a></nav><nav class="sidebar"><a class="logo-container" href="../mathvis/index.html"><img class="rust-logo" src="../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Crate mathvis</a></h2><div class="sidebar-elems"><ul class="block"><li class="version">Version 0.1.0</li><li><a id="all-types" href="all.html">All Items</a></li></ul><section><ul class="block"><li><a href="#modules">Modules</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Crate <a class="mod" href="#">mathvis</a><button id="copy-path" title="Copy item path to clipboard"><img src="../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="src" href="../src/mathvis/lib.rs.html#1-5">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The name is <code>MathVis</code>. Stands for “Math Vision”</p>
+<h3 id="adding-to-project"><a href="#adding-to-project">Adding to project</a></h3>
+<p>There’s no cargo entry for it yet, but you can (hopefully) still use it by including</p>
+<div class="example-wrap"><pre class="language-toml"><code>    regex = { git = &quot;https://github.com/Dzuchun/mathvis.git&quot; }
+</code></pre></div>
+<p>into your project’s <code>Cargo.toml</code> file.</p>
+<h2 id="overview"><a href="#overview">Overview</a></h2>
+<p>This is a simple library I coded to recognize basic math expressions involving constants, variables, arithmetic operations and functions. Operating is done exclusively with <code>num::complex::Complex64</code> for now, as I have failed with dynamic typing (would appreciate any help with that, you may see some implementations for arbitrary types at my <a href="https://github.com/Dzuchun/mathvis/commit/6b9cd1ad46366f689b4afd7a4c35069eead69a0f"><code>first commit</code></a>).</p>
+<p>Here’s some info on what this library can be used for:</p>
+<h3 id="lexing"><a href="#lexing">Lexing</a></h3>
+<p>All text input should first be lexed (i.e. turned into tokens) first. This can be done with <code>mathvis::lexer::lex</code> function, returning <code>Vec&lt;Token&gt;</code>, if successful.</p>
+<p>At this point, you may recognize some extended syntax and replace it with your own. Examples:</p>
+<ul>
+<li><code>2x</code> would not be parsed as <code>2 * x</code> by default (it would be an error, actually). You may insert <code>Token::Operator(Operator::Star)</code> between each <code>Token::Number</code> and <code>Token::Ident</code> you find to get this sort of behavior.</li>
+<li>Only functions with one or two arguments are supported for now. But three and more - argument function syntax can still recognized my you manually and transformed into two-argument function call(s), if possible.</li>
+</ul>
+<h3 id="parsing"><a href="#parsing">Parsing</a></h3>
+<p>Slice of tokens can be parsed (i.e. turned into evaluation tree). This is done with <code>mathvis::evaluation_tree::EvaluationTree::from_tokens</code> function, returning <code>EvaluationTree</code>, if successful.</p>
+<p><code>EvaluationTree</code> is my way to represent syntax, in a form that’s easy to compute. You can’t make any modifications into syntax at this point, <em>but</em> you still have not defined any variables and/or functions used, as these are not represented by this tree.</p>
+<h3 id="evaluation"><a href="#evaluation">Evaluation</a></h3>
+<p><code>EvaluationTree</code> can be, well, evaluated to a single <code>Complex64</code> with <code>mathvis::evaluation_tree::Evaluatable::evaluate</code> function. To do that, it needs a suitable <code>mathvis::evaluation_tree::args::Args</code> object, used to represent variable values and function definitions. To obtain it (and find out which variables/functions parsed expression actually need), you may use <code>mathvis::evaluation_tree::Evaluatable::args</code> function defined for <code>EvaluationTree</code>. Resulting <code>Args</code> object will have all the required values <em>registered</em>, but <em>assigned</em>. You are expected to assign all of the values/functions registered by a tree.</p>
+<p>You can define your own constants and functions this way, for example:</p>
+<ul>
+<li>To define a constant, you’ll want to unconditionally call <code>Args::assign_variable</code>.</li>
+<li>To define a custom function, you’ll want to use <code>Args::assign_function</code>/<code>Args::assign_function2</code>. These accept <code>impl Fn</code>s, so you may use function pointers as well as closures.</li>
+</ul>
+<p>There’s no problem in case of unused assignments in <code>Args</code> struct, so you are <em>not forced</em> to use your custom constants/functions.</p>
+<p>Both <code>EvaluationTree</code> and <code>Args</code> are <strong>not</strong> consumed upon evaluation, meaning you can reuse same tree for iterative computations as well as modify arguments to get a different result.</p>
+<h2 id="examples"><a href="#examples">Examples</a></h2><h3 id="simple"><a href="#simple">Simple</a></h3>
+<p>The following is a <code>simple</code> example, involving all of the steps described above</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>input = <span class="string">&quot;2 * sum_sq(x, y) ^ y + sin(x * y)&quot;</span>;
+
+<span class="kw">let </span>(<span class="kw">_</span>, tokens) = mathvis::lexer::lex(input).expect(<span class="string">&quot;Should be able to recognize tokens&quot;</span>);
+
+<span class="kw">let </span>tree = mathvis::evaluation_tree::EvaluationTree::from_tokens(tokens.as_slice())
+    .expect(<span class="string">&quot;Should be able to parse into tree&quot;</span>);
+
+<span class="kw">let </span><span class="kw-2">mut </span>args = tree.args();
+<span class="comment">// args are expected to contain variables &quot;x&quot; and &quot;y&quot;, as well as &quot;sin&quot; function and &quot;sum_sq&quot; function2
+// let define them, then:
+</span>args.assign_variable(<span class="string">&quot;x&quot;</span>, Complex64::new(<span class="number">2.0</span>, -<span class="number">3.0</span>));
+args.assign_variable(<span class="string">&quot;y&quot;</span>, Complex64::new(-std::f64::consts::PI, <span class="number">1.0</span>));
+args.assign_function(<span class="string">&quot;sin&quot;</span>, Complex64::sin);
+args.assign_function2(<span class="string">&quot;sum_sq&quot;</span>, |x, y| x * x + y * y);
+
+<span class="kw">let </span>result = tree.evaluate(<span class="kw-2">&amp;</span>args).expect(<span class="string">&quot;Should be able to evaluate&quot;</span>);
+
+<span class="macro">print!</span>(<span class="string">&quot;{}&quot;</span>, result);</code></pre></div>
+<p>I got an output of</p>
+<div class="example-wrap"><pre class="language-bash"><code>6460.656547978857-45323.133349725416i
+</code></pre></div>
+<p>which is similar to <a href="https://www.wolframalpha.com/input?i=2+*+%28%282+-+3i%29%5E2+%2B++%28-pi%2Bi%29%5E2%29+%5E+%28-pi%2Bi%29+%2B+sin%28%282+-+3i%29+*+%28-pi%2Bi%29%29">what WolframAlpha gets</a></p>
+<h3 id="cli-calculator"><a href="#cli-calculator">Cli calculator</a></h3>
+<p>The following is a loop part of a <code>cli_calculator</code> example. Steps can be clearly seen here.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="comment">// read input from stdin
+</span><span class="macro">print!</span>(<span class="string">&quot;\n\nPlease, input your formula: &quot;</span>);
+std::io::stdout().flush().unwrap();
+input.clear();
+<span class="kw">if </span>std::io::stdin().read_line(<span class="kw-2">&amp;mut </span>input).unwrap() == <span class="number">0 </span>{
+    <span class="kw">return</span>;
+}
+input.pop(); <span class="comment">// pop &#39;\n&#39;
+
+// lex to tokens
+</span><span class="kw">let </span>tokens = <span class="kw">match </span>mathvis::lexer::lex(input.as_str()) {
+    <span class="prelude-val">Ok</span>((left, tokens)) =&gt; {
+        <span class="kw">if </span>!left.is_empty() {
+            <span class="macro">println!</span>(<span class="string">&quot;Info: \&quot;{left}\&quot; was ignored&quot;</span>);
+        }
+        tokens
+    }
+    <span class="prelude-val">Err</span>(err) =&gt; {
+        <span class="macro">eprintln!</span>(<span class="string">&quot;Failed to evaluate: {err}&quot;</span>);
+        <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+    }
+};
+
+<span class="comment">// parse to tree
+</span><span class="kw">let </span>tree = <span class="kw">match </span>mathvis::evaluation_tree::EvaluationTree::from_tokens(tokens.as_slice()) {
+    <span class="prelude-val">Ok</span>(tree) =&gt; tree,
+    <span class="prelude-val">Err</span>(err) =&gt; {
+        <span class="macro">eprintln!</span>(<span class="string">&quot;Failed to parse tokens: {err}&quot;</span>);
+        <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+    }
+};
+
+<span class="comment">// create the arguments
+</span><span class="kw">let </span><span class="kw-2">mut </span>args = tree.args(); <span class="comment">// input args
+</span>args.merge(default_args()); <span class="comment">// merge with default args
+
+</span><span class="kw">if </span>args.functions2().into_iter().next().is_some() {
+    <span class="comment">// there are functions2, this expression will not be evaluated
+    </span><span class="macro">eprintln!</span>(<span class="string">&quot;CLI calculator does not support functions2&quot;</span>);
+    <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+}
+
+<span class="kw">if let </span><span class="prelude-val">Some</span>(name) = args
+    .functions_mut()
+    .into_iter()
+    .find_map(|(name, v)| v.is_none().then_some(name))
+{
+    <span class="comment">// there are unknown functions
+    </span><span class="macro">eprintln!</span>(<span class="string">&quot;{name} is an unknown function. CLI calculator does not support your own function definition, please use trig functions only&quot;</span>);
+    <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+}
+
+<span class="comment">// ask user to assign all the variables
+</span><span class="kw">for </span>(name, val) <span class="kw">in </span>args.variables_mut() {
+    <span class="kw">if </span>val.is_some() {
+        <span class="kw">continue</span>;
+    }
+    <span class="macro">print!</span>(<span class="string">&quot;Please assign {name} := &quot;</span>);
+    std::io::stdout().flush().unwrap();
+    input.clear();
+    <span class="kw">if </span>std::io::stdin().read_line(<span class="kw-2">&amp;mut </span>input).unwrap() == <span class="number">0 </span>{
+        <span class="kw">return</span>;
+    }
+    input.pop(); <span class="comment">// pop &#39;\n&#39;
+    </span><span class="kw">match </span>input.parse() {
+        <span class="prelude-val">Ok</span>(parsed) =&gt; {
+            <span class="kw-2">*</span>val = <span class="prelude-val">Some</span>(parsed);
+        }
+        <span class="prelude-val">Err</span>(err) =&gt; {
+            <span class="macro">eprintln!</span>(<span class="string">&quot;Bad assignment format: {err}&quot;</span>);
+            <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+        }
+    }
+}
+
+<span class="comment">// evaluate
+</span><span class="kw">let </span>res = <span class="kw">match </span>tree.evaluate(<span class="kw-2">&amp;</span>args) {
+    <span class="prelude-val">Ok</span>(res) =&gt; res,
+    <span class="prelude-val">Err</span>(err) =&gt; {
+        <span class="macro">eprintln!</span>(<span class="string">&quot;Unexpected error while evaluation: {err}&quot;</span>);
+        <span class="kw">continue </span><span class="lifetime">&#39;outer</span>;
+    }
+};
+
+<span class="macro">println!</span>(<span class="string">&quot;The end result is {res}&quot;</span>);</code></pre></div>
+<h2 id="on-complex-arithmetic"><a href="#on-complex-arithmetic">On complex arithmetic</a></h2>
+<p>Pretty much the only this end user does not control about it - is complex exponentiation syntax. It should be noted, that strictly-speaking, this operation would have several results in case of a non-integer exponent. Currently, I’m using <code>num</code>’s exponentiation implementation, but you can obvious define your own (just define a function2 for it).</p>
+<h2 id="flaws"><a href="#flaws">Flaws</a></h2>
+<ul>
+<li><strong>Lots of allocations</strong>: unfortunately, I see no <em>safe</em> way to avoid these on every tree node.</li>
+<li><strong>Slow computation</strong>: right now tree is actually walked around to compute the result. This is less than ideal, as it results in uncountable many pointer chases, and well as decent recursion leveling. To mitigate this, I plan on creating a module to convert <code>EvaluationTree</code> into sort-of-compiled instructions array that can be linearly followed during the execution. Any suggestions on this end would be greatly appreciated too.</li>
+<li><strong>Traits instead of enums</strong>: for some reason, I decided it would be great to give end-used an ability to define their custom node types. But now, when I think about it, it seems that there are not much to be added, especially considering I do not grant an ability for custom syntax (apart from bare token modifications).</li>
+</ul>
+<p>I’ll try to deal with these some time in the future, but it is like that for now, I guess.</p>
+</div></details><h2 id="modules" class="small-section-header"><a href="#modules">Modules</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="evaluation_tree/index.html" title="mod mathvis::evaluation_tree">evaluation_tree</a></div><div class="desc docblock-short">This module defines <a href="evaluation_tree/trait.Evaluatable.html" title="trait mathvis::evaluation_tree::Evaluatable"><code>Evaluatable</code></a> trait as well as types implementing it that are intended to be used.</div></li><li><div class="item-name"><a class="mod" href="lexer/index.html" title="mod mathvis::lexer">lexer</a></div><div class="desc docblock-short">This module defines lexer and structs relevant to it.</div></li><li><div class="item-name"><a class="mod" href="parser/index.html" title="mod mathvis::parser">parser</a></div><div class="desc docblock-short">This module defines parser and relevant structs.</div></li></ul></section></div></main></body></html>

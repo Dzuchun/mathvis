@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ArgType","MissingError"],"struct":["Args","ArgsErased","ArgsRefErased"]};

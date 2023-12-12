@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["convert_case","derive_more","mathvis","memchr","minimal_lexical","nom","num","num_bigint","num_complex","num_integer","num_iter","num_rational","num_traits","proc_macro2","quote","thiserror","thiserror_impl","unicode_ident"];
