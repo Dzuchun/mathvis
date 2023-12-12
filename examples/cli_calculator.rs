@@ -46,6 +46,7 @@ fn main() {
         if args.functions2().into_iter().next().is_some() {
             // there are functions2, this expression will not be evaluated
             eprintln!("CLI calculator does not support functions2");
+            continue 'outer;
         }
 
         if let Some(name) = args
