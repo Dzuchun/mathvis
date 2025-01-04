@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn tokens() {
         // arrange
-        let input = r#"2 + x^2 - (3x^2 - 7y / sin[z])"#;
+        let input = "2 + x^2 - (3x^2 - 7y / sin[z])";
 
         // act
         let tokens = lex(input);

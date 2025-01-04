@@ -229,7 +229,7 @@ impl Args {
     pub fn get_function<N: AsRef<str> + Into<String>>(
         &self,
         name: N,
-    ) -> Result<&dyn Fn(Complex64) -> Complex64, MissingError> {
+    ) -> Result<&Function, MissingError> {
         self.functions
             .get(name.as_ref())
             .ok_or_else(|| MissingError::MissingEntry(ArgType::Function, name.as_ref().to_owned()))
@@ -246,7 +246,7 @@ impl Args {
     pub fn get_function2<N: AsRef<str> + Into<String>>(
         &self,
         name: N,
-    ) -> Result<&dyn Fn(Complex64, Complex64) -> Complex64, MissingError> {
+    ) -> Result<&Function2, MissingError> {
         self.functions2
             .get(name.as_ref())
             .ok_or_else(|| MissingError::MissingEntry(ArgType::Function2, name.as_ref().to_owned()))
@@ -286,7 +286,7 @@ impl Args {
     /// Gets iterator over registered function names as well as their definitions - [`Option::None`] represents no definition, while [`Option::Some`] represents defined function.
     pub fn functions_mut(
         &mut self,
-    ) -> impl IntoIterator<Item = (&String, &mut Option<Box<dyn Fn(Complex64) -> Complex64>>)> {
+    ) -> impl IntoIterator<Item = (&String, &mut Option<Box<Function>>)> {
         self.functions.iter_mut()
     }
 
@@ -298,12 +298,7 @@ impl Args {
     /// Gets iterator over registered function2 names as well as their definitions - [`Option::None`] represents no definition, while [`Option::Some`] represents defined function2.
     pub fn functions2_mut(
         &mut self,
-    ) -> impl IntoIterator<
-        Item = (
-            &String,
-            &mut Option<Box<dyn Fn(Complex64, Complex64) -> Complex64>>,
-        ),
-    > {
+    ) -> impl IntoIterator<Item = (&String, &mut Option<Box<Function2>>)> {
         self.functions2.iter_mut()
     }
 }

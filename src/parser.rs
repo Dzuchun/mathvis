@@ -240,7 +240,7 @@ fn assert_parens(tokens: &[Token]) -> Res<()> {
 
 fn number(tokens: &[Token]) -> Res<f64> {
     let token = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -255,7 +255,7 @@ fn number(tokens: &[Token]) -> Res<f64> {
 
 fn plus(tokens: &[Token]) -> Res<()> {
     let t = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -270,7 +270,7 @@ fn plus(tokens: &[Token]) -> Res<()> {
 
 fn minus(tokens: &[Token]) -> Res<()> {
     let t = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -285,7 +285,7 @@ fn minus(tokens: &[Token]) -> Res<()> {
 
 fn star(tokens: &[Token]) -> Res<()> {
     let t = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -300,7 +300,7 @@ fn star(tokens: &[Token]) -> Res<()> {
 
 fn imaginary_unit(tokens: &[Token]) -> Res<()> {
     let t = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -315,7 +315,7 @@ fn imaginary_unit(tokens: &[Token]) -> Res<()> {
 
 fn identifier(tokens: &[Token]) -> Res<String> {
     let t = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -370,7 +370,7 @@ fn sign(tokens: &[Token]) -> Res<bool> {
 
 fn paren(tokens: &[Token]) -> Res<&[Token]> {
     let t = tokens
-        .get(0)
+        .first()
         .ok_or(Err::Error(GenerationError::Empty(Needed::Size(
             NonZeroUsize::try_from(1).expect("1 is not zero"),
         ))))?;
@@ -403,6 +403,7 @@ fn paren(tokens: &[Token]) -> Res<&[Token]> {
     Err(Err::Failure(GenerationError::UnpairedGrouping))
 }
 
+#[allow(clippy::result_large_err, dead_code, reason = "It's a testing code")]
 #[cfg(test)]
 mod tests {
 
@@ -579,7 +580,7 @@ mod tests {
         Token::Operator(Operator::Plus),
         Token::Identifier("y".to_owned()),
         Token::Operator(Operator::Star),
-        Token::Number(2f64.into())
+        Token::Number(2f64)
     ], expected = Addition::new(Variable::new("x"), Multiplication::new(Variable::new("y"), Constant(2f64.into())))}
 
     // [-x + 4] * sin{y}^2
@@ -588,7 +589,7 @@ mod tests {
         Token::Operator(Operator::Minus),
         Token::Identifier("x".to_owned()),
         Token::Operator(Operator::Plus),
-        Token::Number(4f64.into()),
+        Token::Number(4f64),
         Token::GroupClose(GroupingType::Brackets),
         Token::Operator(Operator::Star),
         Token::Identifier("sin".to_owned()),
@@ -596,7 +597,7 @@ mod tests {
         Token::Identifier("y".to_owned()),
         Token::GroupClose(GroupingType::Braces),
         Token::Operator(Operator::Cap),
-        Token::Number(2f64.into())
+        Token::Number(2f64)
     ], expected = Multiplication::new(
         Addition::new(
             Negation::new(Variable::new("x")),

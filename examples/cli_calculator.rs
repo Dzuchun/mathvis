@@ -106,19 +106,21 @@ fn default_args() -> Args {
     args.assign_function("cos", Complex64::cos);
     args.assign_function("tan", Complex64::tan);
     args.assign_function("tg", Complex64::tan);
-    fn cot(z: Complex64) -> Complex64 {
-        Complex64::new(1.0, 0.0) / z.tan()
-    }
     args.assign_function("cot", cot);
     args.assign_function("ctg", cot);
     args.assign_function("asin", Complex64::asin);
     args.assign_function("acos", Complex64::acos);
     args.assign_function("atan", Complex64::atan);
     args.assign_function("arctg", Complex64::atan);
-    fn acot(z: Complex64) -> Complex64 {
-        Complex64::new(std::f64::consts::FRAC_PI_2, 0.0) - z.atan()
-    }
     args.assign_function("acot", acot);
     args.assign_function("arcctg", acot);
     args
+}
+
+fn cot(z: Complex64) -> Complex64 {
+    Complex64::new(1.0, 0.0) / z.tan()
+}
+
+fn acot(z: Complex64) -> Complex64 {
+    Complex64::new(std::f64::consts::FRAC_PI_2, 0.0) - z.atan()
 }
