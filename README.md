@@ -40,6 +40,8 @@ Both `EvaluationTree` and `Args` are **not** consumed upon evaluation, meaning y
 The following is a `simple` example, involving all of the steps described above
 
 ```rust
+# use num::complex::Complex64;
+# use crate::mathvis::evaluation_tree::Evaluatable;
 let input = "2 * sum_sq(x, y) ^ y + sin(x * y)";
 
 let (_, tokens) = mathvis::lexer::lex(input).expect("Should be able to recognize tokens");
@@ -68,7 +70,7 @@ which is similar to [what WolframAlpha gets][simple wolfram]
 ## Cli calculator
 The following is a loop part of a `cli_calculator` example. Steps can be clearly seen here.
 
-```rust
+```rust,ignore
 // read input from stdin
 print!("\n\nPlease, input your formula: ");
 std::io::stdout().flush().unwrap();
