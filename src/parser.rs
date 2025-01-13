@@ -1,6 +1,11 @@
 //! This module defines parser and relevant structs.
 
-use std::num::NonZeroUsize;
+use core::num::NonZeroUsize;
+
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use nom::{
     branch::alt,
@@ -9,6 +14,7 @@ use nom::{
     sequence::tuple,
     Err, Needed,
 };
+
 use num::complex::Complex64;
 use thiserror::Error;
 
@@ -407,6 +413,7 @@ fn paren(tokens: &[Token]) -> Res<&[Token]> {
 #[cfg(test)]
 mod tests {
 
+    use alloc::borrow::ToOwned;
     use num::complex::Complex64;
     use rand::Rng;
 

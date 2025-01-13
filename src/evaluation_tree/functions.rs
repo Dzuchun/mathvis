@@ -6,6 +6,7 @@
 //!
 //! In presented API, only [`NamedFunction`]s are used for now. Although, I might add lots of default functions that will automatically resolve to their [`Functional`] counterparts during parsing.
 
+use alloc::string::String;
 use num::complex::Complex64;
 
 use super::{

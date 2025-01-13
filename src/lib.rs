@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![no_std]
 
 use core::fmt::Display;
 
@@ -10,6 +11,10 @@ pub mod lexer_v2;
 
 #[macro_use]
 extern crate tracing;
+
+// #[cfg(test)] // <-- TODO: make optional
+#[macro_use]
+extern crate alloc;
 
 #[cfg(test)]
 #[allow(unused)]
@@ -47,4 +52,5 @@ pub(crate) fn display_opt<T: Display>(t: &Option<T>) -> &dyn Display {
     }
 }
 #[cfg(test)]
-extern crate alloc;
+#[macro_use]
+extern crate std;

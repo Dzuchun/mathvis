@@ -2,6 +2,8 @@ use super::Word;
 
 use proptest::{prelude::ProptestConfig, prop_assert_eq, proptest};
 
+use alloc::string::String;
+
 proptest! {
     #![proptest_config(ProptestConfig {
         cases: 10_000,

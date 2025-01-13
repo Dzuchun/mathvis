@@ -6,6 +6,7 @@
 //! [`EvaluationTree`] can be created by parsing with [`EvaluationTree::from_tokens`] function.
 //! If you need some custom structure, [`EvaluationTree`] can be ignored and bare [`Node`]s used instead, as they both implement [`Evaluatable`] anyway.
 
+use alloc::{boxed::Box, string::String};
 use num::{complex::Complex64, Complex};
 
 use crate::{
@@ -182,6 +183,7 @@ where
 #[cfg(test)]
 mod tests {
 
+    use alloc::borrow::ToOwned;
     use num::complex::Complex64;
 
     use crate::evaluation_tree::args::{Args, MissingError};

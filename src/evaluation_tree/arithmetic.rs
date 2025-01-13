@@ -27,6 +27,7 @@ impl Operator for Negation {
 #[cfg(test)]
 mod negation_tests {
 
+    use alloc::borrow::ToOwned;
     use num::complex::Complex64;
 
     use crate::evaluation_tree::{
@@ -111,6 +112,7 @@ impl Operator for Addition {
 #[cfg(test)]
 mod addition_tests {
 
+    use alloc::borrow::ToOwned;
     use num::complex::Complex64;
 
     use crate::evaluation_tree::{

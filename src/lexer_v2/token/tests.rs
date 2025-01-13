@@ -2,6 +2,8 @@ use super::super::StrTokenParser;
 use super::Token;
 use crate::{number, word};
 
+use alloc::vec::Vec;
+
 macro_rules! test_tokens {
     ($(#[$($attr:tt)+])* $name:ident, ($($input:tt)*), [$($expected:expr),*]) => {
         ::paste::paste! {

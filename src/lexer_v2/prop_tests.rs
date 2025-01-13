@@ -2,6 +2,8 @@ use super::{token::SpannedToken, StrTokenParser};
 
 use proptest::{prelude::ProptestConfig, proptest};
 
+use alloc::string::String;
+
 proptest! {
     #![proptest_config(ProptestConfig {
         cases: 30_000,

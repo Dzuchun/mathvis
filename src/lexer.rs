@@ -1,5 +1,10 @@
 //! This module defines lexer and structs relevant to it.
 
+use alloc::{
+    borrow::ToOwned,
+    string::{String, ToString},
+    vec::Vec,
+};
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -11,8 +16,6 @@ use nom::{
     sequence::{pair, preceded},
 };
 
-use core::str::FromStr;
-
 use crate::{
     display_opt,
     lexer_v2::{
@@ -21,7 +24,9 @@ use crate::{
     },
 };
 
-type Res<'l, T = Token> = nom::IResult<&'l str, T, Error<&'l str>>;
+use core::{fmt::Display, str::FromStr};
+
+type Res<'l, T = OldToken> = nom::IResult<&'l str, T, Error<&'l str>>;
 
 /// Represents type of grouping.
 #[derive(Debug, PartialEq, Clone)]

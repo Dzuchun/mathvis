@@ -16,13 +16,15 @@
 //!
 //! Variables/functions can be unregistered too. Although, there's not much use for it apart from debugging.
 
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-};
+use core::fmt::Debug;
+
+use alloc::{borrow::ToOwned, boxed::Box, string::String, vec::Vec};
 
 use num::complex::Complex64;
+
 use thiserror::Error;
+
+use hashbrown::{HashMap, HashSet};
 
 /// Represents types of arguments.
 ///
@@ -75,7 +77,7 @@ impl AsRef<Args> for ArgsErased {
 pub struct ArgsRefErased<'l>(pub &'l Args);
 
 impl Debug for ArgsRefErased<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         fn display_map<V>(map: &HashMap<String, V>) -> String {
             format!(
                 "{{{}}}",
@@ -94,7 +96,7 @@ impl Debug for ArgsRefErased<'_> {
 }
 
 impl Debug for ArgsErased {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         ArgsRefErased(&self.0).fmt(f)
     }
 }

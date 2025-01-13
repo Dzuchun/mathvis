@@ -1,5 +1,4 @@
-use core::fmt::Display;
-use std::ops::Not;
+use core::{fmt::Display, ops::Not};
 
 use crate::display_opt;
 
