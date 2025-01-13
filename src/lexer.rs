@@ -24,7 +24,7 @@ use crate::{
     },
 };
 
-use core::{fmt::Display, str::FromStr};
+use core::str::FromStr;
 
 type Res<'l, T = OldToken> = nom::IResult<&'l str, T, Error<&'l str>>;
 
@@ -51,7 +51,7 @@ pub enum Operator {
 
 /// Represents a single token.
 #[derive(Debug, PartialEq)]
-pub enum Token {
+pub enum OldToken {
     GroupOpen(GroupingType),
     GroupClose(GroupingType),
     Operator(Operator),
@@ -61,8 +61,6 @@ pub enum Token {
     Identifier(String),
 }
 
-<<<<<<< HEAD
-=======
 #[derive(Debug, Clone, Copy, thiserror::Error)]
 #[error("Unsupported token: {_0}")]
 pub struct UnsupportedToken<'s>(Token<&'s str, &'s str, &'s str>);
@@ -132,7 +130,6 @@ impl<'s> TryFrom<Token<&'s str, &'s str, &'s str>> for OldToken {
     }
 }
 
->>>>>>> 7d0e9b0 (impl app)
 /// Represents token type (used for debug)
 #[derive(Debug, PartialEq, derive_more::Display)]
 pub enum TokenType {
@@ -145,7 +142,7 @@ pub enum TokenType {
 
 fn paren_open(i: &str) -> Res {
     map(one_of("([{"), |c| {
-        Token::GroupOpen(match c {
+        OldToken::GroupOpen(match c {
             '(' => GroupingType::Parentheses,
             '[' => GroupingType::Brackets,
             '{' => GroupingType::Braces,
@@ -156,7 +153,7 @@ fn paren_open(i: &str) -> Res {
 
 fn paren_close(i: &str) -> Res {
     map(one_of(")]}"), |c| {
-        Token::GroupClose(match c {
+        OldToken::GroupClose(match c {
             ')' => GroupingType::Parentheses,
             ']' => GroupingType::Brackets,
             '}' => GroupingType::Braces,
@@ -167,7 +164,7 @@ fn paren_close(i: &str) -> Res {
 
 fn operator(i: &str) -> Res {
     map(one_of("+-*/^"), |c| {
-        Token::Operator(match c {
+        OldToken::Operator(match c {
             '+' => Operator::Plus,
             '-' => Operator::Minus,
             '*' => Operator::Star,
@@ -179,11 +176,11 @@ fn operator(i: &str) -> Res {
 }
 
 fn comma(i: &str) -> Res {
-    map(pchar(','), |_| Token::Comma)(i)
+    map(pchar(','), |_| OldToken::Comma)(i)
 }
 
 fn imaginary_unit(i: &str) -> Res {
-    map(pchar('i'), |_| Token::ImaginaryUnit)(i)
+    map(pchar('i'), |_| OldToken::ImaginaryUnit)(i)
 }
 
 // source: https://github.com/rust-bakery/nom/blob/main/doc/nom_recipes.md#identifiers
@@ -193,12 +190,12 @@ fn identifier(i: &str) -> Res {
             alt((alpha1, tag("_"))),
             many0_count(alt((alphanumeric1, tag("_")))),
         )),
-        |name: &str| Token::Identifier(name.to_owned()),
+        |name: &str| OldToken::Identifier(name.to_owned()),
     )(i)
 }
 
 fn number(i: &str) -> Res {
-    map(double, Token::Number)(i)
+    map(double, OldToken::Number)(i)
 }
 
 fn whitespace(i: &str) -> Res<()> {
@@ -206,7 +203,7 @@ fn whitespace(i: &str) -> Res<()> {
 }
 
 /// lexes the input
-pub fn lex(i: &str) -> Res<Vec<Token>> {
+pub fn lex(i: &str) -> Res<Vec<OldToken>> {
     fold_many1(
         preceded(
             whitespace,
@@ -230,18 +227,15 @@ pub fn lex(i: &str) -> Res<Vec<Token>> {
 
 #[cfg(test)]
 mod tests {
-<<<<<<< HEAD
-=======
     use alloc::borrow::ToOwned;
     use alloc::vec::Vec;
 
->>>>>>> 7d0e9b0 (impl app)
     use crate::lexer::GroupingType;
     use crate::lexer_v2::token::Token;
     use crate::lexer_v2::StrTokenParser;
 
     use super::lex;
-    use super::Token;
+    use super::OldToken;
 
     #[test]
     fn tokens() {
@@ -257,26 +251,26 @@ mod tests {
             Ok((
                 "",
                 vec![
-                    Token::Number(2f64),
-                    Token::Operator(crate::lexer::Operator::Plus),
-                    Token::Identifier("x".to_owned()),
-                    Token::Operator(crate::lexer::Operator::Cap),
-                    Token::Number(2f64),
-                    Token::Operator(crate::lexer::Operator::Minus),
-                    Token::GroupOpen(GroupingType::Parentheses),
-                    Token::Number(3f64),
-                    Token::Identifier("x".to_owned()),
-                    Token::Operator(crate::lexer::Operator::Cap),
-                    Token::Number(2f64),
-                    Token::Operator(crate::lexer::Operator::Minus),
-                    Token::Number(7f64),
-                    Token::Identifier("y".to_owned()),
-                    Token::Operator(crate::lexer::Operator::Slash),
-                    Token::Identifier("sin".to_owned()),
-                    Token::GroupOpen(GroupingType::Brackets),
-                    Token::Identifier("z".to_owned()),
-                    Token::GroupClose(GroupingType::Brackets),
-                    Token::GroupClose(GroupingType::Parentheses),
+                    OldToken::Number(2f64),
+                    OldToken::Operator(crate::lexer::Operator::Plus),
+                    OldToken::Identifier("x".to_owned()),
+                    OldToken::Operator(crate::lexer::Operator::Cap),
+                    OldToken::Number(2f64),
+                    OldToken::Operator(crate::lexer::Operator::Minus),
+                    OldToken::GroupOpen(GroupingType::Parentheses),
+                    OldToken::Number(3f64),
+                    OldToken::Identifier("x".to_owned()),
+                    OldToken::Operator(crate::lexer::Operator::Cap),
+                    OldToken::Number(2f64),
+                    OldToken::Operator(crate::lexer::Operator::Minus),
+                    OldToken::Number(7f64),
+                    OldToken::Identifier("y".to_owned()),
+                    OldToken::Operator(crate::lexer::Operator::Slash),
+                    OldToken::Identifier("sin".to_owned()),
+                    OldToken::GroupOpen(GroupingType::Brackets),
+                    OldToken::Identifier("z".to_owned()),
+                    OldToken::GroupClose(GroupingType::Brackets),
+                    OldToken::GroupClose(GroupingType::Parentheses),
                 ]
             ))
         );

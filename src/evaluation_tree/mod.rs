@@ -10,7 +10,7 @@ use alloc::{boxed::Box, string::String};
 use num::{complex::Complex64, Complex};
 
 use crate::{
-    lexer::Token,
+    lexer::OldToken,
     parser::{parse, GenerationError},
 };
 
@@ -49,7 +49,7 @@ pub struct EvaluationTree(Node);
 
 impl EvaluationTree {
     /// Attempts to parse a tree from token slice. May fail with [`GenerationError`] to indicate incorrect syntax.
-    pub fn from_tokens(tokens: &[Token]) -> Result<Self, GenerationError> {
+    pub fn from_tokens(tokens: &[OldToken]) -> Result<Self, GenerationError> {
         Ok(Self(parse(tokens)?))
     }
 }
