@@ -11,6 +11,16 @@ use nom::{
     sequence::{pair, preceded},
 };
 
+use core::str::FromStr;
+
+use crate::{
+    display_opt,
+    lexer_v2::{
+        number::Number,
+        token::{SpecialKind, Token},
+    },
+};
+
 type Res<'l, T = Token> = nom::IResult<&'l str, T, Error<&'l str>>;
 
 /// Represents type of grouping.
@@ -46,6 +56,78 @@ pub enum Token {
     Identifier(String),
 }
 
+<<<<<<< HEAD
+=======
+#[derive(Debug, Clone, Copy, thiserror::Error)]
+#[error("Unsupported token: {_0}")]
+pub struct UnsupportedToken<'s>(Token<&'s str, &'s str, &'s str>);
+
+impl<'s> TryFrom<Token<&'s str, &'s str, &'s str>> for OldToken {
+    type Error = UnsupportedToken<'s>;
+
+    fn try_from(value: Token<&'s str, &'s str, &'s str>) -> Result<Self, Self::Error> {
+        let token = match value {
+            Token::Grouping {
+                kind: crate::lexer_v2::token::GroupingKind::Parentheses,
+                side: crate::lexer_v2::token::GroupingSide::Left,
+            } => Self::GroupOpen(GroupingType::Parentheses),
+            Token::Grouping {
+                kind: crate::lexer_v2::token::GroupingKind::Brackets,
+                side: crate::lexer_v2::token::GroupingSide::Left,
+            } => Self::GroupOpen(GroupingType::Brackets),
+            Token::Grouping {
+                kind: crate::lexer_v2::token::GroupingKind::Braces,
+                side: crate::lexer_v2::token::GroupingSide::Left,
+            } => Self::GroupOpen(GroupingType::Braces),
+            Token::Grouping {
+                kind: crate::lexer_v2::token::GroupingKind::Parentheses,
+                side: crate::lexer_v2::token::GroupingSide::Right,
+            } => Self::GroupClose(GroupingType::Parentheses),
+            Token::Grouping {
+                kind: crate::lexer_v2::token::GroupingKind::Brackets,
+                side: crate::lexer_v2::token::GroupingSide::Right,
+            } => Self::GroupClose(GroupingType::Brackets),
+            Token::Grouping {
+                kind: crate::lexer_v2::token::GroupingKind::Braces,
+                side: crate::lexer_v2::token::GroupingSide::Right,
+            } => Self::GroupClose(GroupingType::Braces),
+            Token::Special(SpecialKind::Comma) => Self::Comma,
+            Token::Special(SpecialKind::Plus) => Self::Operator(Operator::Plus),
+            Token::Special(SpecialKind::Minus) => Self::Operator(Operator::Minus),
+            Token::Special(SpecialKind::Star) => Self::Operator(Operator::Star),
+            Token::Special(SpecialKind::Slash) => Self::Operator(Operator::Slash),
+            Token::Special(SpecialKind::Cap) => Self::Operator(Operator::Cap),
+            Token::Number(Number::Integer { int, exp }) => Self::Number(
+                f64::from_str(&format!("{int}.0{}", display_opt(&exp)))
+                    .map_err(|_| UnsupportedToken(value))?,
+            ),
+            Token::Number(Number::Decimal {
+                int,
+                point,
+                frac,
+                exp,
+            }) => Self::Number(
+                f64::from_str(&format!("{int}{point}{frac}{}", display_opt(&exp)))
+                    .map_err(|_| UnsupportedToken(value))?,
+            ),
+            Token::Number(Number::DecimalInt { int, point, exp }) => Self::Number(
+                f64::from_str(&format!("{int}{point}0{}", display_opt(&exp)))
+                    .map_err(|_| UnsupportedToken(value))?,
+            ),
+            Token::Number(Number::DecimalFraction { point, frac, exp }) => Self::Number(
+                f64::from_str(&format!("0{point}{frac}{}", display_opt(&exp)))
+                    .map_err(|_| UnsupportedToken(value))?,
+            ),
+            Token::Word(word) if *word == "i" => Self::ImaginaryUnit,
+            Token::Word(word) => Self::Identifier(word.to_string()),
+            _ => return Err(UnsupportedToken(value)),
+        };
+
+        Ok(token)
+    }
+}
+
+>>>>>>> 7d0e9b0 (impl app)
 /// Represents token type (used for debug)
 #[derive(Debug, PartialEq, derive_more::Display)]
 pub enum TokenType {
@@ -143,7 +225,15 @@ pub fn lex(i: &str) -> Res<Vec<Token>> {
 
 #[cfg(test)]
 mod tests {
+<<<<<<< HEAD
+=======
+    use alloc::borrow::ToOwned;
+    use alloc::vec::Vec;
+
+>>>>>>> 7d0e9b0 (impl app)
     use crate::lexer::GroupingType;
+    use crate::lexer_v2::token::Token;
+    use crate::lexer_v2::StrTokenParser;
 
     use super::lex;
     use super::Token;
@@ -185,5 +275,27 @@ mod tests {
                 ]
             ))
         );
+    }
+
+    #[test]
+    fn tokens_new_to_old_same() {
+        crate::log_init();
+
+        // arrange
+        let input = "2 + x^2 - (3x^2 - 7y / sin[z])";
+
+        // act
+        let tokens = lex(input).expect("Must be a valid input").1;
+        let new_tokens = StrTokenParser::<Token>::new(input)
+            .inspect(|new_token| trace!(?new_token))
+            .map(|p| {
+                p.expect("Should not encounter errors")
+                    .try_into()
+                    .expect("Should not have unsupported tokens")
+            })
+            .collect::<Vec<_>>();
+
+        // assert
+        assert_eq!(tokens, new_tokens);
     }
 }

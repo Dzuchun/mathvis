@@ -6,10 +6,22 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-derive_more = {version = "1.0.0", features = ["display"]}
+derive_more = {version = "1.0.0", features = ["display", "as_ref", "deref"]}
 nom = "7.1.3"
 num = "0.4.3"
 thiserror = "2.0.11"
+generic-array = "1.1.1"
+tracing = { version = "0.1.41", default-features = false, features = ["attributes"] }
 
 [dev-dependencies]
+paste = "1.0.15"
 rand = "0.8.5"
+tracing-subscriber = { version = "0.3.19", default-features = false, features = ["std", "fmt", "time", "local-time", "ansi"] }
+proptest = "1.6.0"
+
+[features]
+default = ["std"]
+std = []
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(verbose_logging)'] }
