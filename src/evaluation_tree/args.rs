@@ -173,10 +173,13 @@ impl Args {
 
     /// Assigns to a variable with certain name (and registers it, if necessary)
     pub fn assign_variable<N: AsRef<str> + Into<String>>(&mut self, name: N, value: Complex64) {
-        if let Some(opt) = self.variables.get_mut(name.as_ref()) {
-            *opt = Some(value);
-        } else {
-            self.variables.insert(name.into(), Some(value));
+        match self.variables.get_mut(name.as_ref()) {
+            Some(opt) => {
+                *opt = Some(value);
+            }
+            _ => {
+                self.variables.insert(name.into(), Some(value));
+            }
         }
     }
 
@@ -187,10 +190,13 @@ impl Args {
         value: impl Fn(Complex64) -> Complex64 + 'static,
     ) {
         let value = Box::new(value);
-        if let Some(opt) = self.functions.get_mut(name.as_ref()) {
-            *opt = Some(value);
-        } else {
-            self.functions.insert(name.into(), Some(value));
+        match self.functions.get_mut(name.as_ref()) {
+            Some(opt) => {
+                *opt = Some(value);
+            }
+            _ => {
+                self.functions.insert(name.into(), Some(value));
+            }
         }
     }
 
@@ -201,10 +207,13 @@ impl Args {
         value: impl Fn(Complex64, Complex64) -> Complex64 + 'static,
     ) {
         let value = Box::new(value);
-        if let Some(opt) = self.functions2.get_mut(name.as_ref()) {
-            *opt = Some(value);
-        } else {
-            self.functions2.insert(name.into(), Some(value));
+        match self.functions2.get_mut(name.as_ref()) {
+            Some(opt) => {
+                *opt = Some(value);
+            }
+            _ => {
+                self.functions2.insert(name.into(), Some(value));
+            }
         }
     }
 

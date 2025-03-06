@@ -30,9 +30,9 @@ mod negation_tests {
     use num::complex::Complex64;
 
     use crate::evaluation_tree::{
+        Constant, Evaluatable, Variable,
         args::{ArgType, Args, MissingError},
         arithmetic::Negation,
-        Constant, Evaluatable, Variable,
     };
 
     #[test]
@@ -114,8 +114,8 @@ mod addition_tests {
     use num::complex::Complex64;
 
     use crate::evaluation_tree::{
-        args::{ArgType, Args, MissingError},
         Evaluatable, Variable,
+        args::{ArgType, Args, MissingError},
     };
 
     use super::Addition;

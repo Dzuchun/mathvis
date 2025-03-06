@@ -3,20 +3,20 @@
 use std::num::NonZeroUsize;
 
 use nom::{
+    Err, Needed,
     branch::alt,
     combinator::{all_consuming, map, map_parser, opt},
     error::{Error as NError, ParseError},
     sequence::tuple,
-    Err, Needed,
 };
 use num::complex::Complex64;
 use thiserror::Error;
 
 use crate::{
     evaluation_tree::{
+        Constant, Node, Variable,
         arithmetic::{Addition, Division, Exponentiation, Multiplication, Negation, Subtraction},
         functions::NamedFunction,
-        Constant, Node, Variable,
     },
     lexer::{Operator, Token, TokenType},
 };
@@ -412,10 +412,10 @@ mod tests {
 
     use crate::{
         evaluation_tree::{
+            Constant, Evaluatable, Node, Variable,
             args::{ArgsErased, MissingError},
             arithmetic::{Addition, Division, Exponentiation, Multiplication, Negation},
             functions::NamedFunction,
-            Constant, Evaluatable, Node, Variable,
         },
         lexer::{GroupingType, Operator, Token},
     };
@@ -430,7 +430,7 @@ mod tests {
     }
 
     fn rand_complex() -> Complex64 {
-        Complex64::new(rand::thread_rng().gen(), rand::thread_rng().gen())
+        Complex64::new(rand::rng().random(), rand::rng().random())
     }
 
     // not a 100%-proof test, but whatever
@@ -466,7 +466,7 @@ mod tests {
     }
 
     macro_rules! test {
-        ($name:ident, tokens = [$($token:expr), *], expected = $expected:expr) => {
+        ($name:ident, tokens = [$($token:expr_2021), *], expected = $expected:expr_2021) => {
             #[test]
             fn $name() {
                 // arrage

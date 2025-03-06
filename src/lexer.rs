@@ -145,8 +145,8 @@ pub fn lex(i: &str) -> Res<Vec<Token>> {
 mod tests {
     use crate::lexer::GroupingType;
 
-    use super::lex;
     use super::Token;
+    use super::lex;
 
     #[test]
     fn tokens() {

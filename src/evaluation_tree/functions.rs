@@ -9,8 +9,8 @@
 use num::complex::Complex64;
 
 use super::{
-    args::{Args, MissingError},
     Evaluatable, Node, NodeRef, Operator,
+    args::{Args, MissingError},
 };
 
 /// A defined function node, requires no additional definition.
@@ -83,8 +83,8 @@ mod tests {
     use num::complex::Complex64;
 
     use crate::evaluation_tree::{
-        args::{ArgType, MissingError},
         Args, Constant, Evaluatable, Variable,
+        args::{ArgType, MissingError},
     };
 
     use super::Functional;

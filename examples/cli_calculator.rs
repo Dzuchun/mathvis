@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use mathvis::evaluation_tree::{args::Args, Evaluatable};
+use mathvis::evaluation_tree::{Evaluatable, args::Args};
 use num::complex::Complex64;
 
 fn main() {
@@ -55,7 +55,9 @@ fn main() {
             .find_map(|(name, v)| v.is_none().then_some(name))
         {
             // there are unknown functions
-            eprintln!("{name} is an unknown function. CLI calculator does not support your own function definition, please use trig functions only");
+            eprintln!(
+                "{name} is an unknown function. CLI calculator does not support your own function definition, please use trig functions only"
+            );
             continue 'outer;
         }
 
